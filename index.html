@@ -69,7 +69,6 @@
             text-transform: uppercase;
             letter-spacing: 0.02em;
             line-height: 1.2;
-            /* Permite que el título rompa en varias líneas si es necesario */
             white-space: normal; 
         }
 
@@ -557,7 +556,7 @@
         try {
             log("Escaneando dispositivos BLE...");
             const device = await navigator.bluetooth.requestDevice({
-                filters: [{ namePrefix: "ESP32" }],
+                filters: [{ namePrefix: "ESP32-C3" }],
                 optionalServices: ["6e400001-b5a3-f393-e0a9-e50e24dcca9e"]
             });
             const server = await device.gatt.connect();
