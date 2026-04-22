@@ -52,35 +52,49 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
             z-index: 10;
+        }
+
+        .brand {
+            flex: 1 1 auto;
+            min-width: 200px;
         }
 
         .brand h1 {
             font-size: 1rem;
             margin: 0;
-            font-weight: 700;
+            font-weight: 800;
             text-transform: uppercase;
-            letter-spacing: 0.05em;
+            letter-spacing: 0.02em;
+            line-height: 1.2;
+            /* Permite que el título rompa en varias líneas si es necesario */
+            white-space: normal; 
         }
 
         .controls {
             display: flex;
-            gap: 10px;
+            gap: 8px;
+            flex-wrap: wrap;
+            flex: 0 1 auto;
+            justify-content: flex-end;
         }
 
         button {
-            padding: 8px 16px;
+            padding: 8px 14px;
             border-radius: 6px;
             border: 1px solid var(--border);
             background: var(--card-bg);
             color: var(--text-main);
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.2s;
             display: flex;
             align-items: center;
             gap: 6px;
+            white-space: nowrap;
         }
 
         button:hover:not(:disabled) {
@@ -113,6 +127,10 @@
             0% { opacity: 1; }
             50% { opacity: 0.6; }
             100% { opacity: 1; }
+        }
+
+        .desktop-only {
+            display: block;
         }
 
         /* --- Main Content Layout --- */
@@ -213,11 +231,60 @@
 
         .full-width { grid-column: span 2; }
 
-        @media (max-width: 1000px) {
-            main { grid-template-columns: 1fr; }
-            aside { grid-row: auto; order: 2; height: 300px; }
-            .dashboard-content { grid-template-columns: 1fr; }
-            .full-width { grid-column: auto; }
+        /* --- Responsive Adjustments --- */
+        @media (max-width: 900px) {
+            header {
+                justify-content: center;
+                text-align: center;
+            }
+            .brand {
+                width: 100%;
+                margin-bottom: 4px;
+            }
+            .controls {
+                width: 100%;
+                justify-content: center;
+            }
+            .desktop-only {
+                display: none;
+            }
+        }
+
+        @media (max-width: 768px) {
+            main {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto auto 1fr;
+            }
+            aside {
+                grid-row: auto;
+                height: 350px;
+                border-right: none;
+                border-bottom: 1px solid var(--border);
+            }
+            .dashboard-content {
+                grid-template-columns: 1fr;
+            }
+            .full-width {
+                grid-column: auto;
+            }
+            .brand h1 {
+                font-size: 0.9rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            header {
+                padding: 12px 16px;
+            }
+            .controls {
+                gap: 6px;
+            }
+            button {
+                padding: 6px 10px;
+                font-size: 0.75rem;
+                flex: 1 1 auto;
+                justify-content: center;
+            }
         }
     </style>
 </head>
@@ -229,17 +296,17 @@
     </div>
     <div class="controls">
         <button onclick="connectUSB()" class="primary">
-            <span>🔌</span> USB (Serial)
+            <span>🔌</span> USB
         </button>
         <button onclick="connectBLE()">
-            <span>🔵</span> Bluetooth
+            <span>🔵</span> BLE
         </button>
-        <div style="width: 1px; background: var(--border); margin: 0 10px;"></div>
+        <div style="width: 1px; background: var(--border); margin: 0 4px;" class="desktop-only"></div>
         <button id="btn-record" onclick="startRecording()" class="record">
             <span>🔴</span> Grabar
         </button>
         <button id="btn-stop" onclick="stopRecording()" disabled>
-            <span>⏹️</span> Parar y Descargar
+            <span>⏹️</span> Stop
         </button>
     </div>
 </header>
@@ -336,12 +403,10 @@
             const d = JSON.parse(line);
             const now = Date.now();
             
-            // Guardar para gráficos en tiempo real
             rawData.ax.push(d.ax); rawData.ay.push(d.ay); rawData.az.push(d.az);
             rawData.gx.push(d.gx); rawData.gy.push(d.gy); rawData.gz.push(d.gz);
             rawData.t.push(now);
 
-            // Si estamos grabando, guardar en la sesión actual
             if (isRecording) {
                 recordedSession.push({
                     timestamp: new Date(now).toISOString(),
@@ -363,9 +428,7 @@
             charts.gyro.series[1].addPoint([now, d.gy], false, shift);
             charts.gyro.series[2].addPoint([now, d.gz], true, shift);
 
-        } catch (e) {
-            // Ignorar errores de parseo de tramas incompletas
-        }
+        } catch (e) { }
     }
 
     // --- Funciones de Grabación ---
@@ -414,22 +477,19 @@
         log("Archivo CSV generado y descargado.", "success");
     }
 
-    // --- Loop de Análisis (PCA & FFT) cada 0.5s ---
+    // --- Loop de Análisis ---
     setInterval(() => {
         if (rawData.ax.length < 32) return;
-
         const n = rawData.ax.length;
         const matrix = [];
         const means = [0, 0, 0];
 
-        // 1. Centrado de datos
         for(let i=0; i<n; i++) {
             means[0] += rawData.ax[i]/n; means[1] += rawData.ay[i]/n; means[2] += rawData.az[i]/n;
             matrix.push([rawData.ax[i], rawData.ay[i], rawData.az[i]]);
         }
         const centered = matrix.map(r => r.map((v, j) => v - means[j]));
 
-        // 2. PCA (Power Iteration para obtener PC1)
         let ev = [1, 1, 1];
         for(let i=0; i<8; i++) {
             let next_ev = [0, 0, 0];
@@ -448,7 +508,6 @@
         charts.pca.series[0].setData(projection.map((v, i) => [rawData.t[i], v]), true, false, false);
         document.getElementById('m-axis').innerText = `[${ev[0].toFixed(2)}, ${ev[1].toFixed(2)}, ${ev[2].toFixed(2)}]`;
 
-        // 3. FFT sobre el eje dominante
         const fftLen = Math.pow(2, Math.floor(Math.log2(projection.length)));
         const signal = projection.slice(-fftLen);
         const spectrum = [];
@@ -464,16 +523,12 @@
             const mag = Math.sqrt(re*re + im*im);
             const freq = k * (FREQ_SAMPLING / fftLen);
             spectrum.push([freq, mag]);
-            
-            if (k > 1 && mag > maxP) { 
-                maxP = mag; domF = freq;
-            }
+            if (k > 1 && mag > maxP) { maxP = mag; domF = freq; }
         }
 
         charts.fft.series[0].setData(spectrum, true);
         document.getElementById('m-hz').innerText = domF.toFixed(2) + " Hz";
         document.getElementById('m-pwr').innerText = maxP.toFixed(2);
-
     }, 500);
 
     // --- Conectividad ---
@@ -483,12 +538,10 @@
             const port = await navigator.serial.requestPort();
             await port.open({ baudRate: 115200 });
             log("Puerto serie abierto a 115200 baudios", "success");
-            
             const decoder = new TextDecoderStream();
             port.readable.pipeTo(decoder.writable);
             const reader = decoder.readable.getReader();
             let buf = "";
-
             while (true) {
                 const { value, done } = await reader.read();
                 if (done) break;
@@ -497,9 +550,7 @@
                 buf = lines.pop();
                 lines.forEach(processIncoming);
             }
-        } catch (err) {
-            log("Error de conexión USB: " + err.message, "error");
-        }
+        } catch (err) { log("Error de conexión USB: " + err.message, "error"); }
     }
 
     async function connectBLE() {
@@ -509,21 +560,16 @@
                 filters: [{ namePrefix: "ESP32" }],
                 optionalServices: ["6e400001-b5a3-f393-e0a9-e50e24dcca9e"]
             });
-            log(`Dispositivo encontrado: ${device.name}`, "info");
             const server = await device.gatt.connect();
-            log("Conexión GATT establecida", "success");
             const service = await server.getPrimaryService("6e400001-b5a3-f393-e0a9-e50e24dcca9e");
             const tx = await service.getCharacteristic("6e400003-b5a3-f393-e0a9-e50e24dcca9e");
-            
             await tx.startNotifications();
             tx.addEventListener('characteristicvaluechanged', (e) => {
                 const text = new TextDecoder().decode(e.target.value);
                 processIncoming(text);
             });
-            log("Suscripción a notificaciones activa", "success");
-        } catch (err) {
-            log("Error BLE: " + err.message, "error");
-        }
+            log("BLE conectado y suscrito", "success");
+        } catch (err) { log("Error BLE: " + err.message, "error"); }
     }
 </script>
 </body>
