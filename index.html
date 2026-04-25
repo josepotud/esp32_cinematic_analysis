@@ -7,104 +7,46 @@
     <script src="https://code.highcharts.com/highcharts.js"></script>
     <style>
         :root {
-            --bg-primary: #ffffff;
-            --bg-secondary: #f8fafc;
-            --card-bg: #ffffff;
-            --text-main: #0f172a;
-            --text-muted: #64748b;
-            --border: #e2e8f0;
-            --accent: #2563eb;
-            --success: #16a34a;
-            --warning: #ca8a04;
-            --danger: #dc2626;
-            --console-bg: #1e293b;
-            --console-text: #f1f5f9;
+            --bg-primary: #ffffff; --bg-secondary: #f8fafc; --card-bg: #ffffff;
+            --text-main: #0f172a; --text-muted: #64748b; --border: #e2e8f0;
+            --accent: #2563eb; --success: #16a34a; --warning: #ca8a04;
+            --danger: #dc2626; --console-bg: #1e293b; --console-text: #f1f5f9;
         }
 
         @media (prefers-color-scheme: dark) {
             :root {
-                --bg-primary: #020617;
-                --bg-secondary: #0f172a;
-                --card-bg: #1e293b;
-                --text-main: #f1f5f9;
-                --text-muted: #94a3b8;
-                --border: #334155;
-                --accent: #3b82f6;
+                --bg-primary: #020617; --bg-secondary: #0f172a; --card-bg: #1e293b;
+                --text-main: #f1f5f9; --text-muted: #94a3b8; --border: #334155; --accent: #3b82f6;
             }
         }
 
-        body {
-            font-family: 'Inter', -apple-system, system-ui, sans-serif;
-            background-color: var(--bg-primary);
-            color: var(--text-main);
-            margin: 0;
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-            overflow: hidden;
-        }
-
-        /* --- Header & Navigation --- */
-        header {
-            padding: 12px 24px;
-            background: var(--card-bg);
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 16px;
-            z-index: 10;
-        }
-
+        body { font-family: 'Inter', -apple-system, system-ui, sans-serif; background-color: var(--bg-primary); color: var(--text-main); margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+        header { padding: 12px 24px; background: var(--card-bg); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; z-index: 10; }
         .brand { flex: 1 1 auto; min-width: 200px; }
-        .brand h1 {
-            font-size: 1rem; margin: 0; font-weight: 800;
-            text-transform: uppercase; letter-spacing: 0.02em;
-            line-height: 1.2; white-space: normal; 
-        }
-
+        .brand h1 { font-size: 1rem; margin: 0; font-weight: 800; text-transform: uppercase; letter-spacing: 0.02em; line-height: 1.2; white-space: normal; }
         .controls { display: flex; gap: 8px; flex-wrap: wrap; flex: 0 1 auto; justify-content: flex-end; }
-
-        button {
-            padding: 8px 14px; border-radius: 6px; border: 1px solid var(--border);
-            background: var(--card-bg); color: var(--text-main); font-size: 0.8rem;
-            font-weight: 600; cursor: pointer; transition: all 0.2s;
-            display: flex; align-items: center; gap: 6px; white-space: nowrap;
-        }
+        button { padding: 8px 14px; border-radius: 6px; border: 1px solid var(--border); background: var(--card-bg); color: var(--text-main); font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 6px; white-space: nowrap; }
         button:hover:not(:disabled) { background: var(--bg-secondary); border-color: var(--accent); }
         button:disabled { opacity: 0.5; cursor: not-allowed; }
         button.primary { background: var(--accent); color: white; border: none; }
         button.record { background: var(--danger); color: white; border: none; }
         button.record.active { animation: pulse 1.5s infinite; }
-
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
 
-        .desktop-only { display: block; }
-        .mobile-only { display: none !important; }
+        .desktop-only { display: block; } .mobile-only { display: none !important; }
 
-        /* --- Main Content Layout --- */
         main { display: grid; grid-template-columns: 320px 1fr; grid-template-rows: auto 1fr; flex: 1; overflow: hidden; }
-
-        /* --- Sidebar & Console --- */
-        aside {
-            grid-row: 1 / 3; background: var(--bg-secondary); border-right: 1px solid var(--border);
-            display: flex; flex-direction: column; padding: 16px; gap: 16px; overflow-y: auto;
-        }
+        aside { grid-row: 1 / 3; background: var(--bg-secondary); border-right: 1px solid var(--border); display: flex; flex-direction: column; padding: 16px; gap: 16px; overflow-y: auto; }
 
         .metrics-container { display: flex; flex-direction: column; gap: 16px; }
         .metric-card { background: var(--card-bg); padding: 16px; border-radius: 10px; border: 1px solid var(--border); }
         .metric-label { font-size: 0.7rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; margin-bottom: 4px; }
         .metric-value { font-size: 1.5rem; font-weight: 700; color: var(--accent); }
 
-        /* --- Panel de Ajustes DSP --- */
         .settings-panel { background: var(--card-bg); padding: 16px; border-radius: 10px; border: 1px solid var(--border); display: flex; flex-direction: column; gap: 12px; }
         .settings-header { font-size: 0.75rem; font-weight: 800; color: var(--text-main); text-transform: uppercase; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
         .setting-item { display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; color: var(--text-muted); font-weight: 600; }
-        .setting-item input, .setting-item select {
-            width: 75px; padding: 4px; background: var(--bg-secondary); border: 1px solid var(--border);
-            color: var(--text-main); border-radius: 4px; font-family: inherit; text-align: right; outline: none;
-        }
+        .setting-item input, .setting-item select { width: 75px; padding: 4px; background: var(--bg-secondary); border: 1px solid var(--border); color: var(--text-main); border-radius: 4px; font-family: inherit; text-align: right; outline: none; }
 
         #console-container { flex: 1; display: flex; flex-direction: column; background: var(--console-bg); border-radius: 8px; overflow: hidden; min-height: 200px; }
         .console-header { padding: 10px 12px; background: #0f172a; color: #94a3b8; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; display: flex; justify-content: space-between; align-items: center; }
@@ -118,12 +60,10 @@
         .log-error { color: #ef4444; }
         .log-warning { color: var(--warning); }
 
-        /* --- Dashboard Area --- */
         .dashboard-content { padding: 16px; display: grid; grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(2, 1fr); gap: 16px; overflow-y: auto; }
         .chart-wrapper { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 12px; position: relative; min-height: 250px; }
         .full-width { grid-column: span 2; }
 
-        /* --- Responsive Adjustments --- */
         @media (max-width: 900px) {
             header { justify-content: center; text-align: center; }
             .brand { width: 100%; margin-bottom: 4px; }
@@ -143,6 +83,7 @@
             .dashboard-content { grid-template-columns: 1fr; padding: 12px; }
             .full-width { grid-column: auto; }
         }
+        @media (max-width: 480px) { header { padding: 12px; } .controls { gap: 6px; } button { padding: 8px 10px; font-size: 0.75rem; flex: 1 1 auto; justify-content: center; } }
     </style>
 </head>
 <body>
@@ -152,22 +93,12 @@
         <h1>Análisis Cinemático</h1>
     </div>
     <div class="controls">
-        <button onclick="connectUSB()" class="primary">
-            <span>🔌</span> USB
-        </button>
-        <button onclick="connectBLE()">
-            <span>🔵</span> BLE
-        </button>
+        <button onclick="connectUSB()" class="primary"><span>🔌</span> USB</button>
+        <button onclick="connectBLE()"><span>🔵</span> BLE</button>
         <div style="width: 1px; background: var(--border); margin: 0 4px;" class="desktop-only"></div>
-        <button id="btn-record" onclick="startRecording()" class="record">
-            <span>🔴</span> Grabar
-        </button>
-        <button id="btn-stop" onclick="stopRecording()" disabled>
-            <span>⏹️</span> Stop
-        </button>
-        <button onclick="toggleConsole()" class="mobile-only" style="background: var(--console-bg); color: white; border: none;">
-            <span>📜</span> Consola
-        </button>
+        <button id="btn-record" onclick="startRecording()" class="record"><span>🔴</span> Grabar</button>
+        <button id="btn-stop" onclick="stopRecording()" disabled><span>⏹️</span> Stop</button>
+        <button onclick="toggleConsole()" class="mobile-only" style="background: var(--console-bg); color: white; border: none;"><span>📜</span> Consola</button>
     </div>
 </header>
 
@@ -257,13 +188,16 @@
     let rawData = { ax: [], ay: [], az: [], gx: [], gy: [], gz: [], t: [] };
     let recordedSession = [];
     let isRecording = false;
-    let usbFirstPacketReceived = false;
+    let dataStarted = false;
+
+    // Escalas de conversión del BMI160
+    const ACCEL_SCALE = 16384.0;
+    const GYRO_SCALE = 2000.0 / 32768.0;
 
     function getMaxDataPoints() {
         const windowEl = document.getElementById('cfg-window');
         const w = windowEl ? (parseFloat(windowEl.value) || 5) : 5;
-        const visualW = Math.max(10, w); 
-        return Math.floor(FREQ_SAMPLING * visualW);
+        return Math.floor(FREQ_SAMPLING * Math.max(10, w));
     }
 
     const isDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -293,72 +227,85 @@
     });
 
     const charts = {
-        acc: Highcharts.chart('c-acc', createChartConfig('Acelerómetro (G)', [
-            { name: 'X', color: '#ef4444', data: [] }, { name: 'Y', color: '#22c55e', data: [] }, { name: 'Z', color: '#3b82f6', data: [] }
-        ])),
-        gyro: Highcharts.chart('c-gyro', createChartConfig('Giroscopio (°/s)', [
-            { name: 'X', color: '#f59e0b', data: [] }, { name: 'Y', color: '#8b5cf6', data: [] }, { name: 'Z', color: '#06b6d4', data: [] }
-        ])),
-        pca: Highcharts.chart('c-pca', createChartConfig('Señal Analizada', [
-            { name: 'Amplitud', color: '#3b82f6', data: [], type: 'spline' }
-        ])),
-        fft: Highcharts.chart('c-fft', {
-            ...createChartConfig('Análisis de Frecuencia (FFT)', [{ name: 'Densidad Espectral', color: '#16a34a', data: [], type: 'area' }]),
-            xAxis: { labels: { style: { color: '#64748b' } }, title: { text: 'Hz', style: { color: '#64748b' } } }
-        })
+        acc: Highcharts.chart('c-acc', createChartConfig('Acelerómetro (G)', [{ name: 'X', color: '#ef4444', data: [] }, { name: 'Y', color: '#22c55e', data: [] }, { name: 'Z', color: '#3b82f6', data: [] }])),
+        gyro: Highcharts.chart('c-gyro', createChartConfig('Giroscopio (°/s)', [{ name: 'X', color: '#f59e0b', data: [] }, { name: 'Y', color: '#8b5cf6', data: [] }, { name: 'Z', color: '#06b6d4', data: [] }])),
+        pca: Highcharts.chart('c-pca', createChartConfig('Señal Analizada', [{ name: 'Amplitud', color: '#3b82f6', data: [], type: 'spline' }])),
+        fft: Highcharts.chart('c-fft', { ...createChartConfig('Análisis de Frecuencia (FFT)', [{ name: 'Densidad Espectral', color: '#16a34a', data: [], type: 'area' }]), xAxis: { labels: { style: { color: '#64748b' } }, title: { text: 'Hz', style: { color: '#64748b' } } } })
     };
 
-    function processIncoming(line) {
+    // FUNCIÓN CENTRALIZADA PARA PROCESAR LOS DATOS YA ESCALADOS
+    function processPhysData(ax, ay, az, gx, gy, gz) {
+        if (!dataStarted) { dataStarted = true; log("Flujo de datos iniciado correctamente.", "success"); }
+
+        const now = Date.now();
+        rawData.ax.push(ax); rawData.ay.push(ay); rawData.az.push(az);
+        rawData.gx.push(gx); rawData.gy.push(gy); rawData.gz.push(gz);
+        rawData.t.push(now);
+
+        if (isRecording) {
+            recordedSession.push({ timestamp: new Date(now).toISOString(), ax, ay, az, gx, gy, gz });
+        }
+
+        const currentMaxPoints = getMaxDataPoints();
+        if (rawData.ax.length > currentMaxPoints) { Object.keys(rawData).forEach(k => rawData[k].shift()); }
+
+        const shift = charts.acc.series[0].data.length > currentMaxPoints;
+        charts.acc.series[0].addPoint([now, ax], false, shift);
+        charts.acc.series[1].addPoint([now, ay], false, shift);
+        charts.acc.series[2].addPoint([now, az], true, shift);
+
+        charts.gyro.series[0].addPoint([now, gx], false, shift);
+        charts.gyro.series[1].addPoint([now, gy], false, shift);
+        charts.gyro.series[2].addPoint([now, gz], true, shift);
+    }
+
+    // LECTOR USB (CSV a Valores Físicos)
+    function processUSBString(line) {
         line = line.trim();
         if (!line) return;
-
-        try {
-            const d = JSON.parse(line);
-            
-            if (!usbFirstPacketReceived) {
-                usbFirstPacketReceived = true;
-                log("¡Primer paquete de datos JSON recibido con éxito!", "success");
-            }
-
-            const now = Date.now();
-            const ax = d.ax !== undefined ? d.ax : 0;
-            const ay = d.ay !== undefined ? d.ay : 0;
-            const az = d.az !== undefined ? d.az : 0;
-            const gx = d.gx !== undefined ? d.gx : 0;
-            const gy = d.gy !== undefined ? d.gy : 0;
-            const gz = d.gz !== undefined ? d.gz : 0;
-            
-            rawData.ax.push(ax); rawData.ay.push(ay); rawData.az.push(az);
-            rawData.gx.push(gx); rawData.gy.push(gy); rawData.gz.push(gz);
-            rawData.t.push(now);
-
-            if (isRecording) {
-                recordedSession.push({
-                    timestamp: new Date(now).toISOString(),
-                    ax: ax, ay: ay, az: az, gx: gx, gy: gy, gz: gz
-                });
-            }
-
-            const currentMaxPoints = getMaxDataPoints();
-            if (rawData.ax.length > currentMaxPoints) {
-                Object.keys(rawData).forEach(k => rawData[k].shift());
-            }
-
-            const shift = charts.acc.series[0].data.length > currentMaxPoints;
-            charts.acc.series[0].addPoint([now, ax], false, shift);
-            charts.acc.series[1].addPoint([now, ay], false, shift);
-            charts.acc.series[2].addPoint([now, az], true, shift);
-
-            charts.gyro.series[0].addPoint([now, gx], false, shift);
-            charts.gyro.series[1].addPoint([now, gy], false, shift);
-            charts.gyro.series[2].addPoint([now, gz], true, shift);
-
-        } catch (e) {
-            // Ignorar errores de parseo de forma silenciosa para no saturar
+        const parts = line.split(',');
+        if (parts.length === 6) {
+            const ax = parseInt(parts[0]) / ACCEL_SCALE;
+            const ay = parseInt(parts[1]) / ACCEL_SCALE;
+            const az = parseInt(parts[2]) / ACCEL_SCALE;
+            const gx = parseInt(parts[3]) * GYRO_SCALE;
+            const gy = parseInt(parts[4]) * GYRO_SCALE;
+            const gz = parseInt(parts[5]) * GYRO_SCALE;
+            processPhysData(ax, ay, az, gx, gy, gz);
         }
     }
 
-    // --- DSP y Matemáticas ---
+    // --- Funciones de Grabación ---
+    function startRecording() {
+        recordedSession = []; isRecording = true;
+        document.getElementById('btn-record').disabled = true;
+        document.getElementById('btn-record').classList.add('active');
+        document.getElementById('btn-stop').disabled = false;
+        log("Grabación iniciada...", "warning");
+    }
+
+    function stopRecording() {
+        isRecording = false;
+        document.getElementById('btn-record').disabled = false;
+        document.getElementById('btn-record').classList.remove('active');
+        document.getElementById('btn-stop').disabled = true;
+        if (recordedSession.length === 0) { log("No hay datos grabados.", "error"); return; }
+        downloadCSV();
+    }
+
+    function downloadCSV() {
+        const headers = ["Timestamp", "Accel_X", "Accel_Y", "Accel_Z", "Gyro_X", "Gyro_Y", "Gyro_Z"];
+        const rows = recordedSession.map(s => [s.timestamp, s.ax, s.ay, s.az, s.gx, s.gy, s.gz]);
+        let csvContent = "data:text/csv;charset=utf-8," + headers.join(",") + "\n" + rows.map(e => e.join(",")).join("\n");
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", `captura_${Date.now()}.csv`);
+        document.body.appendChild(link); link.click(); document.body.removeChild(link);
+        log("CSV generado y descargado.", "success");
+    }
+
+    // --- Filtros DSP ---
     function applyMovingAverage(data, windowSize) {
         if (windowSize <= 1) return data;
         let res = [];
@@ -387,6 +334,7 @@
 
     let lastAnalysisTime = 0;
 
+    // --- Loop de Análisis PCA y FFT ---
     setInterval(() => {
         if (rawData.ax.length < 32) return;
         
@@ -420,7 +368,6 @@
         let signalToAnalyze = [];
 
         if (mode === 'pca') {
-            // --- MODO PCA ---
             let f_ax = applyIIRFilter(applyIIRFilter(applyMovingAverage(ax_slice, smoothWin), lpFreq, 'low', dt), hpFreq, 'high', dt);
             let f_ay = applyIIRFilter(applyIIRFilter(applyMovingAverage(ay_slice, smoothWin), lpFreq, 'low', dt), hpFreq, 'high', dt);
             let f_az = applyIIRFilter(applyIIRFilter(applyMovingAverage(az_slice, smoothWin), lpFreq, 'low', dt), hpFreq, 'high', dt);
@@ -454,12 +401,10 @@
             charts.pca.setTitle({text: 'Componente Principal (PCA)'});
 
         } else if (mode === 'mag') {
-            // --- MODO MAGNITUD ---
             let mag_raw = [];
             for(let i=0; i<pointsToAnalyze; i++) {
                 mag_raw.push(Math.sqrt(ax_slice[i]*ax_slice[i] + ay_slice[i]*ay_slice[i] + az_slice[i]*az_slice[i]));
             }
-            // Filtramos la magnitud. El High-Pass quitará automáticamente el +1G de la gravedad.
             let f_mag = applyMovingAverage(mag_raw, smoothWin);
             f_mag = applyIIRFilter(f_mag, lpFreq, 'low', dt);
             f_mag = applyIIRFilter(f_mag, hpFreq, 'high', dt);
@@ -491,8 +436,8 @@
             const freq = k * (actualFS / fftLen);
             
             if (freq > 0) {
-                if (fftWeight === 1) mag = mag / freq;           // Velocidad
-                else if (fftWeight === 2) mag = mag / (freq * freq); // Desplazamiento
+                if (fftWeight === 1) mag = mag / freq;           
+                else if (fftWeight === 2) mag = mag / (freq * freq); 
             }
             
             if (freq >= fftMin && freq <= fftMax) {
@@ -507,36 +452,6 @@
         document.getElementById('m-pwr').innerText = maxP.toFixed(2);
     }, 100);
 
-    // --- Grabación ---
-    function startRecording() {
-        recordedSession = []; isRecording = true;
-        document.getElementById('btn-record').disabled = true;
-        document.getElementById('btn-record').classList.add('active');
-        document.getElementById('btn-stop').disabled = false;
-        log("Grabación iniciada...", "warning");
-    }
-
-    function stopRecording() {
-        isRecording = false;
-        document.getElementById('btn-record').disabled = false;
-        document.getElementById('btn-record').classList.remove('active');
-        document.getElementById('btn-stop').disabled = true;
-        if (recordedSession.length === 0) { log("No hay datos grabados.", "error"); return; }
-        downloadCSV();
-    }
-
-    function downloadCSV() {
-        const headers = ["Timestamp", "Accel_X", "Accel_Y", "Accel_Z", "Gyro_X", "Gyro_Y", "Gyro_Z"];
-        const rows = recordedSession.map(s => [s.timestamp, s.ax, s.ay, s.az, s.gx, s.gy, s.gz]);
-        let csvContent = "data:text/csv;charset=utf-8," + headers.join(",") + "\n" + rows.map(e => e.join(",")).join("\n");
-        const encodedUri = encodeURI(csvContent);
-        const link = document.createElement("a");
-        link.setAttribute("href", encodedUri);
-        link.setAttribute("download", `captura_${Date.now()}.csv`);
-        document.body.appendChild(link); link.click(); document.body.removeChild(link);
-        log("CSV generado y descargado.", "success");
-    }
-
     // --- Conectividad ---
     async function connectUSB() {
         try {
@@ -544,15 +459,10 @@
             const port = await navigator.serial.requestPort();
             await port.open({ baudRate: 115200 });
 
-            // PROTECCIÓN: Algunos PCs lanzan error al forzar señales DTR, lo intentamos pero no bloqueamos si falla.
-            try {
-                await port.setSignals({ dataTerminalReady: true, requestToSend: true });
-            } catch (e) {
-                log("Aviso: Las señales DTR/RTS no se pudieron forzar (Normal en algunos sistemas).", "warning");
-            }
+            try { await port.setSignals({ dataTerminalReady: true, requestToSend: true }); } catch (e) {}
             
-            log("Puerto abierto. Esperando flujo de datos...", "info");
-            usbFirstPacketReceived = false;
+            log("Puerto abierto. Esperando CSV...", "info");
+            dataStarted = false;
 
             const decoder = new TextDecoderStream();
             port.readable.pipeTo(decoder.writable);
@@ -566,7 +476,7 @@
                 
                 const lines = buf.split(/\r?\n/);
                 buf = lines.pop(); 
-                lines.forEach(processIncoming);
+                lines.forEach(processUSBString);
             }
         } catch (err) { log("Error USB: " + err.message, "error"); }
     }
@@ -582,16 +492,28 @@
             device.addEventListener('gattserverdisconnected', () => { log("Conexión BLE cortada.", "error"); });
 
             const server = await device.gatt.connect();
-            await new Promise(resolve => setTimeout(resolve, 500)); // Estabilidad
+            await new Promise(resolve => setTimeout(resolve, 500)); 
             const service = await server.getPrimaryService("6e400001-b5a3-f393-e0a9-e50e24dcca9e");
             const tx = await service.getCharacteristic("6e400003-b5a3-f393-e0a9-e50e24dcca9e");
             
             await tx.startNotifications();
+            dataStarted = false;
+            log("BLE suscrito. Decodificando binario...", "info");
+
             tx.addEventListener('characteristicvaluechanged', (e) => {
-                const text = new TextDecoder().decode(e.target.value);
-                processIncoming(text);
+                // LECTOR BLUETOOTH (Binario RAW de 12 Bytes)
+                const view = e.target.value; 
+                if(view.byteLength === 12) {
+                    // Los datos llegan en formato Int16 (Little Endian, típico de los procesadores ESP32)
+                    const ax = view.getInt16(0, true) / ACCEL_SCALE;
+                    const ay = view.getInt16(2, true) / ACCEL_SCALE;
+                    const az = view.getInt16(4, true) / ACCEL_SCALE;
+                    const gx = view.getInt16(6, true) * GYRO_SCALE;
+                    const gy = view.getInt16(8, true) * GYRO_SCALE;
+                    const gz = view.getInt16(10, true) * GYRO_SCALE;
+                    processPhysData(ax, ay, az, gx, gy, gz);
+                }
             });
-            log("BLE conectado recibiendo datos.", "success");
         } catch (err) { log("Error BLE: " + err.message, "error"); }
     }
 </script>
