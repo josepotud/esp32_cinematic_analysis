@@ -531,15 +531,24 @@
             const d = JSON.parse(line);
             const now = Date.now();
             
-            rawData.ax.push(d.ax); rawData.ay.push(d.ay); rawData.az.push(d.az);
-            rawData.gx.push(d.gx); rawData.gy.push(d.gy); rawData.gz.push(d.gz);
+            // --- PROTECCIÓN ANTI-ERRORES ---
+            // Si tu firmware no envía gx, gy, gz, asignamos 0 para evitar que la matemática colapse y detenga el gráfico.
+            const ax = d.ax !== undefined ? d.ax : 0;
+            const ay = d.ay !== undefined ? d.ay : 0;
+            const az = d.az !== undefined ? d.az : 0;
+            const gx = d.gx !== undefined ? d.gx : 0;
+            const gy = d.gy !== undefined ? d.gy : 0;
+            const gz = d.gz !== undefined ? d.gz : 0;
+            
+            rawData.ax.push(ax); rawData.ay.push(ay); rawData.az.push(az);
+            rawData.gx.push(gx); rawData.gy.push(gy); rawData.gz.push(gz);
             rawData.t.push(now);
 
             if (isRecording) {
                 recordedSession.push({
                     timestamp: new Date(now).toISOString(),
-                    ax: d.ax, ay: d.ay, az: d.az,
-                    gx: d.gx, gy: d.gy, gz: d.gz
+                    ax: ax, ay: ay, az: az,
+                    gx: gx, gy: gy, gz: gz
                 });
             }
 
@@ -550,13 +559,13 @@
             }
 
             const shift = charts.acc.series[0].data.length > currentMaxPoints;
-            charts.acc.series[0].addPoint([now, d.ax], false, shift);
-            charts.acc.series[1].addPoint([now, d.ay], false, shift);
-            charts.acc.series[2].addPoint([now, d.az], true, shift);
+            charts.acc.series[0].addPoint([now, ax], false, shift);
+            charts.acc.series[1].addPoint([now, ay], false, shift);
+            charts.acc.series[2].addPoint([now, az], true, shift);
 
-            charts.gyro.series[0].addPoint([now, d.gx], false, shift);
-            charts.gyro.series[1].addPoint([now, d.gy], false, shift);
-            charts.gyro.series[2].addPoint([now, d.gz], true, shift);
+            charts.gyro.series[0].addPoint([now, gx], false, shift);
+            charts.gyro.series[1].addPoint([now, gy], false, shift);
+            charts.gyro.series[2].addPoint([now, gz], true, shift);
 
         } catch (e) {
             // Descomentar para depurar errores de parsing
@@ -619,6 +628,21 @@
             let sum = 0;
             for (let j = start; j <= i; j++) sum += data[j];
             res.push(sum / (i - start + 1));
+        }
+        return res;
+    }
+
+    function applyIIRFilter(data, cutoff, type, dt) {
+        if (!cutoff || cutoff <= 0 || cutoff >= 1/(2*dt)) return data;
+        let rc = 1.0 / (cutoff * 2 * Math.PI);
+        let res = [data[0]];
+        
+        if (type === 'low') {
+            let alpha = dt / (rc + dt);
+            for (let i = 1; i < data.length; i++) res.push(res[i-1] + alpha * (data[i] - res[i-1]));
+        } else if (type === 'high') {
+            let alpha = rc / (rc + dt);
+            for (let i = 1; i < data.length; i++) res.push(alpha * (res[i-1] + data[i] - data[i-1]));
         }
         return res;
     }
@@ -753,7 +777,7 @@
             // Fuerza las señales de control para que el ESP32 habilite la salida del puerto Serie USB (CDC)
             await port.setSignals({ dataTerminalReady: true, requestToSend: true });
             
-            log("Puerto serie abierto a 115200 baudios", "success");
+            log("Puerto serie abierto a 115200 baudios. Esperando datos...", "success");
             const decoder = new TextDecoderStream();
             port.readable.pipeTo(decoder.writable);
             const reader = decoder.readable.getReader();
@@ -777,19 +801,35 @@
         try {
             log("Escaneando dispositivos BLE...");
             const device = await navigator.bluetooth.requestDevice({
-                filters: [{ namePrefix: "ESP32-C3" }],
+                filters: [{ namePrefix: "ESP32" }], // Nombre más tolerante ("ESP32" detectará a "ESP32-C3-Serial")
                 optionalServices: ["6e400001-b5a3-f393-e0a9-e50e24dcca9e"]
             });
+
+            // Registrar si ocurre una desconexión abrupta
+            device.addEventListener('gattserverdisconnected', () => {
+                log("¡Conexión BLE cortada por el dispositivo!", "error");
+            });
+
+            log("Emparejado. Solicitando servicios al ESP32...", "info");
             const server = await device.gatt.connect();
+            
+            // --- TRUCO DE ESTABILIDAD ---
+            // Esperamos medio segundo antes de pedir las características. 
+            // Esto evita el error: "GATT Server is disconnected. Cannot retrieve services"
+            await new Promise(resolve => setTimeout(resolve, 500));
+
             const service = await server.getPrimaryService("6e400001-b5a3-f393-e0a9-e50e24dcca9e");
             const tx = await service.getCharacteristic("6e400003-b5a3-f393-e0a9-e50e24dcca9e");
+            
             await tx.startNotifications();
             tx.addEventListener('characteristicvaluechanged', (e) => {
                 const text = new TextDecoder().decode(e.target.value);
                 processIncoming(text);
             });
-            log("BLE conectado y suscrito", "success");
-        } catch (err) { log("Error BLE: " + err.message, "error"); }
+            log("BLE conectado de forma estable y recibiendo datos", "success");
+        } catch (err) { 
+            log("Error BLE: " + err.message, "error"); 
+        }
     }
 </script>
 </body>
