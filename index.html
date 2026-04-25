@@ -57,211 +57,60 @@
             z-index: 10;
         }
 
-        .brand {
-            flex: 1 1 auto;
-            min-width: 200px;
-        }
-
+        .brand { flex: 1 1 auto; min-width: 200px; }
         .brand h1 {
-            font-size: 1rem;
-            margin: 0;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 0.02em;
-            line-height: 1.2;
-            white-space: normal; 
+            font-size: 1rem; margin: 0; font-weight: 800;
+            text-transform: uppercase; letter-spacing: 0.02em;
+            line-height: 1.2; white-space: normal; 
         }
 
-        .controls {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-            flex: 0 1 auto;
-            justify-content: flex-end;
-        }
+        .controls { display: flex; gap: 8px; flex-wrap: wrap; flex: 0 1 auto; justify-content: flex-end; }
 
         button {
-            padding: 8px 14px;
-            border-radius: 6px;
-            border: 1px solid var(--border);
-            background: var(--card-bg);
-            color: var(--text-main);
-            font-size: 0.8rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            white-space: nowrap;
+            padding: 8px 14px; border-radius: 6px; border: 1px solid var(--border);
+            background: var(--card-bg); color: var(--text-main); font-size: 0.8rem;
+            font-weight: 600; cursor: pointer; transition: all 0.2s;
+            display: flex; align-items: center; gap: 6px; white-space: nowrap;
         }
+        button:hover:not(:disabled) { background: var(--bg-secondary); border-color: var(--accent); }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+        button.primary { background: var(--accent); color: white; border: none; }
+        button.record { background: var(--danger); color: white; border: none; }
+        button.record.active { animation: pulse 1.5s infinite; }
 
-        button:hover:not(:disabled) {
-            background: var(--bg-secondary);
-            border-color: var(--accent);
-        }
-
-        button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        button.primary {
-            background: var(--accent);
-            color: white;
-            border: none;
-        }
-
-        button.record {
-            background: var(--danger);
-            color: white;
-            border: none;
-        }
-        
-        button.record.active {
-            animation: pulse 1.5s infinite;
-        }
-
-        @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.6; }
-            100% { opacity: 1; }
-        }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
 
         .desktop-only { display: block; }
         .mobile-only { display: none !important; }
 
         /* --- Main Content Layout --- */
-        main {
-            display: grid;
-            grid-template-columns: 320px 1fr;
-            grid-template-rows: auto 1fr;
-            flex: 1;
-            overflow: hidden;
-        }
+        main { display: grid; grid-template-columns: 320px 1fr; grid-template-rows: auto 1fr; flex: 1; overflow: hidden; }
 
         /* --- Sidebar & Console --- */
         aside {
-            grid-row: 1 / 3;
-            background: var(--bg-secondary);
-            border-right: 1px solid var(--border);
-            display: flex;
-            flex-direction: column;
-            padding: 16px;
-            gap: 16px;
-            overflow-y: auto;
+            grid-row: 1 / 3; background: var(--bg-secondary); border-right: 1px solid var(--border);
+            display: flex; flex-direction: column; padding: 16px; gap: 16px; overflow-y: auto;
         }
 
-        .metrics-container {
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-        }
-
-        .metric-card {
-            background: var(--card-bg);
-            padding: 16px;
-            border-radius: 10px;
-            border: 1px solid var(--border);
-        }
-
-        .metric-label {
-            font-size: 0.7rem;
-            color: var(--text-muted);
-            font-weight: 700;
-            text-transform: uppercase;
-            margin-bottom: 4px;
-        }
-
-        .metric-value {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: var(--accent);
-        }
+        .metrics-container { display: flex; flex-direction: column; gap: 16px; }
+        .metric-card { background: var(--card-bg); padding: 16px; border-radius: 10px; border: 1px solid var(--border); }
+        .metric-label { font-size: 0.7rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; margin-bottom: 4px; }
+        .metric-value { font-size: 1.5rem; font-weight: 700; color: var(--accent); }
 
         /* --- Panel de Ajustes DSP --- */
-        .settings-panel {
-            background: var(--card-bg);
-            padding: 16px;
-            border-radius: 10px;
-            border: 1px solid var(--border);
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-
-        .settings-header {
-            font-size: 0.75rem;
-            font-weight: 800;
-            color: var(--text-main);
-            text-transform: uppercase;
-            border-bottom: 1px solid var(--border);
-            padding-bottom: 8px;
-        }
-
-        .setting-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 0.8rem;
-            color: var(--text-muted);
-            font-weight: 600;
-        }
-
+        .settings-panel { background: var(--card-bg); padding: 16px; border-radius: 10px; border: 1px solid var(--border); display: flex; flex-direction: column; gap: 12px; }
+        .settings-header { font-size: 0.75rem; font-weight: 800; color: var(--text-main); text-transform: uppercase; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+        .setting-item { display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; color: var(--text-muted); font-weight: 600; }
         .setting-item input, .setting-item select {
-            width: 75px;
-            padding: 4px;
-            background: var(--bg-secondary);
-            border: 1px solid var(--border);
-            color: var(--text-main);
-            border-radius: 4px;
-            font-family: inherit;
-            text-align: right;
-            outline: none;
+            width: 75px; padding: 4px; background: var(--bg-secondary); border: 1px solid var(--border);
+            color: var(--text-main); border-radius: 4px; font-family: inherit; text-align: right; outline: none;
         }
 
-        #console-container {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            background: var(--console-bg);
-            border-radius: 8px;
-            overflow: hidden;
-            min-height: 200px;
-        }
-
-        .console-header {
-            padding: 10px 12px;
-            background: #0f172a;
-            color: #94a3b8;
-            font-size: 0.75rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .close-console-btn {
-            background: transparent;
-            border: none;
-            color: #f1f5f9;
-            font-size: 1.2rem;
-            padding: 0;
-            line-height: 1;
-            cursor: pointer;
-        }
-
-        #console {
-            padding: 12px;
-            font-family: 'SFMono-Regular', Consolas, monospace;
-            font-size: 0.75rem;
-            color: var(--console-text);
-            overflow-y: auto;
-            flex: 1;
-            line-height: 1.5;
-        }
-
+        #console-container { flex: 1; display: flex; flex-direction: column; background: var(--console-bg); border-radius: 8px; overflow: hidden; min-height: 200px; }
+        .console-header { padding: 10px 12px; background: #0f172a; color: #94a3b8; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; display: flex; justify-content: space-between; align-items: center; }
+        .close-console-btn { background: transparent; border: none; color: #f1f5f9; font-size: 1.2rem; padding: 0; line-height: 1; cursor: pointer; }
+        #console { padding: 12px; font-family: 'SFMono-Regular', Consolas, monospace; font-size: 0.75rem; color: var(--console-text); overflow-y: auto; flex: 1; line-height: 1.5; }
+        
         .log-entry { margin-bottom: 4px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 2px; }
         .log-time { color: #64748b; margin-right: 8px; }
         .log-info { color: #3b82f6; }
@@ -270,24 +119,8 @@
         .log-warning { color: var(--warning); }
 
         /* --- Dashboard Area --- */
-        .dashboard-content {
-            padding: 16px;
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            grid-template-rows: repeat(2, 1fr);
-            gap: 16px;
-            overflow-y: auto;
-        }
-
-        .chart-wrapper {
-            background: var(--card-bg);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 12px;
-            position: relative;
-            min-height: 250px;
-        }
-
+        .dashboard-content { padding: 16px; display: grid; grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(2, 1fr); gap: 16px; overflow-y: auto; }
+        .chart-wrapper { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 12px; position: relative; min-height: 250px; }
         .full-width { grid-column: span 2; }
 
         /* --- Responsive Adjustments --- */
@@ -300,59 +133,15 @@
 
         @media (max-width: 768px) {
             .mobile-only { display: flex !important; }
-            main {
-                grid-template-columns: 1fr;
-                grid-template-rows: auto 1fr;
-            }
-            aside {
-                grid-row: auto;
-                height: auto;
-                border-right: none;
-                border-bottom: 1px solid var(--border);
-                padding: 12px;
-            }
-            
-            /* Métricas en fila para móvil */
-            .metrics-container {
-                flex-direction: row;
-                flex-wrap: nowrap;
-                overflow-x: auto;
-                gap: 8px;
-                padding-bottom: 4px;
-            }
-            .metric-card {
-                flex: 1;
-                min-width: 110px;
-                padding: 10px;
-                text-align: center;
-            }
+            main { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
+            aside { grid-row: auto; height: auto; border-right: none; border-bottom: 1px solid var(--border); padding: 12px; }
+            .metrics-container { flex-direction: row; flex-wrap: nowrap; overflow-x: auto; gap: 8px; padding-bottom: 4px; }
+            .metric-card { flex: 1; min-width: 110px; padding: 10px; text-align: center; }
             .metric-value { font-size: 1.2rem; }
-
-            /* Consola Flotante en Móvil */
-            #console-container {
-                position: fixed;
-                top: 0; left: 0; width: 100vw; height: 100vh;
-                border-radius: 0;
-                z-index: 1000;
-                transform: translateY(100%);
-                transition: transform 0.3s ease-in-out;
-            }
-            #console-container.show {
-                transform: translateY(0);
-            }
-
-            .dashboard-content {
-                grid-template-columns: 1fr;
-                padding: 12px;
-            }
+            #console-container { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; border-radius: 0; z-index: 1000; transform: translateY(100%); transition: transform 0.3s ease-in-out; }
+            #console-container.show { transform: translateY(0); }
+            .dashboard-content { grid-template-columns: 1fr; padding: 12px; }
             .full-width { grid-column: auto; }
-            .brand h1 { font-size: 0.9rem; }
-        }
-
-        @media (max-width: 480px) {
-            header { padding: 12px; }
-            .controls { gap: 6px; }
-            button { padding: 8px 10px; font-size: 0.75rem; flex: 1 1 auto; justify-content: center; }
         }
     </style>
 </head>
@@ -376,7 +165,6 @@
         <button id="btn-stop" onclick="stopRecording()" disabled>
             <span>⏹️</span> Stop
         </button>
-        <!-- Botón exclusivo para mostrar la consola en móvil -->
         <button onclick="toggleConsole()" class="mobile-only" style="background: var(--console-bg); color: white; border: none;">
             <span>📜</span> Consola
         </button>
@@ -395,15 +183,21 @@
                 <div id="m-pwr" class="metric-value">0.00</div>
             </div>
             <div class="metric-card">
-                <div class="metric-label">Vector PCA</div>
+                <div class="metric-label" id="m-axis-label">Vector Principal</div>
                 <div id="m-axis" class="metric-value" style="font-size: 0.9rem;">[0.0, 0.0, 0.0]</div>
             </div>
         </div>
 
-        <!-- Panel de Filtros DSP -->
         <div class="settings-panel">
             <div class="settings-header">Filtros DSP</div>
-            <div class="setting-item" title="Intervalo de actualización de los cálculos">
+            <div class="setting-item" title="Modo de análisis">
+                <label>Señal Base</label>
+                <select id="cfg-mode">
+                    <option value="pca" selected>PCA</option>
+                    <option value="mag">Magnitud</option>
+                </select>
+            </div>
+            <div class="setting-item" title="Intervalo de actualización">
                 <label>Refresco (s)</label>
                 <input type="number" id="cfg-refresh" value="0.5" step="0.1" min="0.1">
             </div>
@@ -411,24 +205,24 @@
                 <label>Ventana (s)</label>
                 <input type="number" id="cfg-window" value="5" step="1" min="1">
             </div>
-            <div class="setting-item" title="Ventana de Media Móvil (1 = Desactivado)">
+            <div class="setting-item" title="Ventana de Media Móvil">
                 <label>Suavizado (N)</label>
                 <input type="number" id="cfg-smooth" value="3" min="1" max="50">
             </div>
-            <div class="setting-item" title="Filtro Pasa Altos: Elimina gravedad y deriva estática">
+            <div class="setting-item" title="Filtro Pasa Altos (Elimina Gravedad)">
                 <label>High-Pass (Hz)</label>
                 <input type="number" id="cfg-hp" value="0.5" step="0.1" min="0">
             </div>
-            <div class="setting-item" title="Filtro Pasa Bajos: Elimina ruido eléctrico de alta frec.">
+            <div class="setting-item" title="Filtro Pasa Bajos">
                 <label>Low-Pass (Hz)</label>
                 <input type="number" id="cfg-lp" value="20" step="1" min="0">
             </div>
-            <div class="setting-item" title="Integra la señal de aceleración para destacar movimientos reales frente a vibraciones rápidas">
+            <div class="setting-item" title="Ponderación espectral">
                 <label>Ponderación</label>
                 <select id="cfg-fft-weight">
-                    <option value="0">Accel (Raw)</option>
-                    <option value="1" selected>Veloc. (1/f)</option>
-                    <option value="2">Despl. (1/f²)</option>
+                    <option value="0">Raw</option>
+                    <option value="1" selected>Veloc.</option>
+                    <option value="2">Despl.</option>
                 </select>
             </div>
             <div class="setting-item">
@@ -441,7 +235,6 @@
             </div>
         </div>
 
-        <!-- La consola se comporta normal en PC y como modal overlay en móvil -->
         <div id="console-container">
             <div class="console-header">
                 <span>Registro de Eventos</span>
@@ -460,24 +253,22 @@
 </main>
 
 <script>
-    // --- Configuración Técnica ---
-    const FREQ_SAMPLING = 100; // Hz (Aumentada la resolución temporal a 100Hz)
-    
-    function getMaxDataPoints() {
-        const windowEl = document.getElementById('cfg-window');
-        const w = windowEl ? (parseFloat(windowEl.value) || 5) : 5;
-        const visualW = Math.max(10, w); // Mantener al menos 10s visuales en la gráfica raw
-        return Math.floor(FREQ_SAMPLING * visualW);
-    }
-    
+    const FREQ_SAMPLING = 100; // Hz
     let rawData = { ax: [], ay: [], az: [], gx: [], gy: [], gz: [], t: [] };
     let recordedSession = [];
     let isRecording = false;
+    let usbFirstPacketReceived = false;
+
+    function getMaxDataPoints() {
+        const windowEl = document.getElementById('cfg-window');
+        const w = windowEl ? (parseFloat(windowEl.value) || 5) : 5;
+        const visualW = Math.max(10, w); 
+        return Math.floor(FREQ_SAMPLING * visualW);
+    }
 
     const isDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
     const textCol = isDarkMode ? '#f1f5f9' : '#0f172a';
 
-    // --- Motor de Registro y UI ---
     function log(message, type = 'info') {
         const consoleEl = document.getElementById('console');
         const entry = document.createElement('div');
@@ -488,11 +279,8 @@
         consoleEl.scrollTop = consoleEl.scrollHeight;
     }
 
-    function toggleConsole() {
-        document.getElementById('console-container').classList.toggle('show');
-    }
+    function toggleConsole() { document.getElementById('console-container').classList.toggle('show'); }
 
-    // --- Configuración de Gráficos (CORREGIDO PARA HIGHCHARTS) ---
     const createChartConfig = (title, seriesData) => ({
         chart: { backgroundColor: 'transparent', animation: false, style: { fontFamily: 'inherit' } },
         title: { text: title, align: 'left', style: { color: textCol, fontSize: '13px', fontWeight: 'bold' } },
@@ -504,7 +292,6 @@
         plotOptions: { series: { marker: { enabled: false }, lineWidth: 1.5, states: { hover: { enabled: false } } } }
     });
 
-    // Pasamos el ID del contenedor como primer argumento de Highcharts.chart
     const charts = {
         acc: Highcharts.chart('c-acc', createChartConfig('Acelerómetro (G)', [
             { name: 'X', color: '#ef4444', data: [] }, { name: 'Y', color: '#22c55e', data: [] }, { name: 'Z', color: '#3b82f6', data: [] }
@@ -512,8 +299,8 @@
         gyro: Highcharts.chart('c-gyro', createChartConfig('Giroscopio (°/s)', [
             { name: 'X', color: '#f59e0b', data: [] }, { name: 'Y', color: '#8b5cf6', data: [] }, { name: 'Z', color: '#06b6d4', data: [] }
         ])),
-        pca: Highcharts.chart('c-pca', createChartConfig('Componente Principal (PCA)', [
-            { name: 'Señal Proyectada', color: '#3b82f6', data: [], type: 'spline' }
+        pca: Highcharts.chart('c-pca', createChartConfig('Señal Analizada', [
+            { name: 'Amplitud', color: '#3b82f6', data: [], type: 'spline' }
         ])),
         fft: Highcharts.chart('c-fft', {
             ...createChartConfig('Análisis de Frecuencia (FFT)', [{ name: 'Densidad Espectral', color: '#16a34a', data: [], type: 'area' }]),
@@ -521,18 +308,19 @@
         })
     };
 
-    // --- Procesamiento de Señal ---
     function processIncoming(line) {
-        // Limpiamos los saltos de línea e ignoramos strings vacíos que puedan llegar por Serial
         line = line.trim();
         if (!line) return;
 
         try {
             const d = JSON.parse(line);
-            const now = Date.now();
             
-            // --- PROTECCIÓN ANTI-ERRORES ---
-            // Si tu firmware no envía gx, gy, gz, asignamos 0 para evitar que la matemática colapse y detenga el gráfico.
+            if (!usbFirstPacketReceived) {
+                usbFirstPacketReceived = true;
+                log("¡Primer paquete de datos JSON recibido con éxito!", "success");
+            }
+
+            const now = Date.now();
             const ax = d.ax !== undefined ? d.ax : 0;
             const ay = d.ay !== undefined ? d.ay : 0;
             const az = d.az !== undefined ? d.az : 0;
@@ -547,13 +335,11 @@
             if (isRecording) {
                 recordedSession.push({
                     timestamp: new Date(now).toISOString(),
-                    ax: ax, ay: ay, az: az,
-                    gx: gx, gy: gy, gz: gz
+                    ax: ax, ay: ay, az: az, gx: gx, gy: gy, gz: gz
                 });
             }
 
             const currentMaxPoints = getMaxDataPoints();
-
             if (rawData.ax.length > currentMaxPoints) {
                 Object.keys(rawData).forEach(k => rawData[k].shift());
             }
@@ -568,58 +354,11 @@
             charts.gyro.series[2].addPoint([now, gz], true, shift);
 
         } catch (e) {
-            // Descomentar para depurar errores de parsing
-            // console.error("Error al procesar línea JSON: ", line); 
+            // Ignorar errores de parseo de forma silenciosa para no saturar
         }
     }
 
-    // --- Funciones de Grabación ---
-    function startRecording() {
-        recordedSession = [];
-        isRecording = true;
-        document.getElementById('btn-record').disabled = true;
-        document.getElementById('btn-record').classList.add('active');
-        document.getElementById('btn-stop').disabled = false;
-        log("Iniciada grabación de datos en crudo...", "warning");
-    }
-
-    function stopRecording() {
-        isRecording = false;
-        document.getElementById('btn-record').disabled = false;
-        document.getElementById('btn-record').classList.remove('active');
-        document.getElementById('btn-stop').disabled = true;
-        
-        if (recordedSession.length === 0) {
-            log("No hay datos grabados para descargar.", "error");
-            return;
-        }
-
-        log(`Grabación finalizada. Procesando ${recordedSession.length} muestras...`, "success");
-        downloadCSV();
-    }
-
-    function downloadCSV() {
-        const headers = ["Timestamp", "Accel_X", "Accel_Y", "Accel_Z", "Gyro_X", "Gyro_Y", "Gyro_Z"];
-        const rows = recordedSession.map(s => [
-            s.timestamp, s.ax, s.ay, s.az, s.gx, s.gy, s.gz
-        ]);
-
-        let csvContent = "data:text/csv;charset=utf-8," 
-            + headers.join(",") + "\n"
-            + rows.map(e => e.join(",")).join("\n");
-
-        const encodedUri = encodeURI(csvContent);
-        const link = document.createElement("a");
-        link.setAttribute("href", encodedUri);
-        link.setAttribute("download", `captura_movimiento_${Date.now()}.csv`);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        
-        log("Archivo CSV generado y descargado.", "success");
-    }
-
-    // --- Filtros DSP ---
+    // --- DSP y Matemáticas ---
     function applyMovingAverage(data, windowSize) {
         if (windowSize <= 1) return data;
         let res = [];
@@ -636,7 +375,6 @@
         if (!cutoff || cutoff <= 0 || cutoff >= 1/(2*dt)) return data;
         let rc = 1.0 / (cutoff * 2 * Math.PI);
         let res = [data[0]];
-        
         if (type === 'low') {
             let alpha = dt / (rc + dt);
             for (let i = 1; i < data.length; i++) res.push(res[i-1] + alpha * (data[i] - res[i-1]));
@@ -649,7 +387,6 @@
 
     let lastAnalysisTime = 0;
 
-    // --- Loop de Análisis PCA y FFT ---
     setInterval(() => {
         if (rawData.ax.length < 32) return;
         
@@ -659,8 +396,7 @@
         lastAnalysisTime = now;
 
         const n_total = rawData.ax.length;
-        
-        // 1. Obtener valores de la interfaz DSP
+        const mode = document.getElementById('cfg-mode').value;
         const smoothWin = parseInt(document.getElementById('cfg-smooth').value) || 1;
         const hpFreq = parseFloat(document.getElementById('cfg-hp').value) || 0;
         const lpFreq = parseFloat(document.getElementById('cfg-lp').value) || 20;
@@ -669,12 +405,10 @@
         const fftWeight = parseInt(document.getElementById('cfg-fft-weight').value) || 1;
         const windowSec = parseFloat(document.getElementById('cfg-window').value) || 5;
         
-        // --- Frecuencia de muestreo dinámica ---
         const timeSpanMs = rawData.t[n_total - 1] - rawData.t[0];
         const actualFS = timeSpanMs > 0 ? (n_total / timeSpanMs) * 1000 : FREQ_SAMPLING;
         const dt = 1.0 / actualFS;
 
-        // Extraer ventana de análisis
         const pointsToAnalyze = Math.min(n_total, Math.floor(windowSec * actualFS));
         if (pointsToAnalyze < 32) return;
 
@@ -683,52 +417,65 @@
         const az_slice = rawData.az.slice(-pointsToAnalyze);
         const t_slice = rawData.t.slice(-pointsToAnalyze);
 
-        // 2. Extraer y aplicar filtros en cascada a la ventana
-        let f_ax = applyMovingAverage(ax_slice, smoothWin);
-        let f_ay = applyMovingAverage(ay_slice, smoothWin);
-        let f_az = applyMovingAverage(az_slice, smoothWin);
+        let signalToAnalyze = [];
 
-        f_ax = applyIIRFilter(f_ax, lpFreq, 'low', dt);
-        f_ay = applyIIRFilter(f_ay, lpFreq, 'low', dt);
-        f_az = applyIIRFilter(f_az, lpFreq, 'low', dt);
+        if (mode === 'pca') {
+            // --- MODO PCA ---
+            let f_ax = applyIIRFilter(applyIIRFilter(applyMovingAverage(ax_slice, smoothWin), lpFreq, 'low', dt), hpFreq, 'high', dt);
+            let f_ay = applyIIRFilter(applyIIRFilter(applyMovingAverage(ay_slice, smoothWin), lpFreq, 'low', dt), hpFreq, 'high', dt);
+            let f_az = applyIIRFilter(applyIIRFilter(applyMovingAverage(az_slice, smoothWin), lpFreq, 'low', dt), hpFreq, 'high', dt);
 
-        f_ax = applyIIRFilter(f_ax, hpFreq, 'high', dt);
-        f_ay = applyIIRFilter(f_ay, hpFreq, 'high', dt);
-        f_az = applyIIRFilter(f_az, hpFreq, 'high', dt);
-
-        // 3. Preparar matriz centrada para PCA
-        const n = pointsToAnalyze;
-        const matrix = [];
-        const means = [0, 0, 0];
-
-        for(let i=0; i<n; i++) {
-            means[0] += f_ax[i]/n; means[1] += f_ay[i]/n; means[2] += f_az[i]/n;
-            matrix.push([f_ax[i], f_ay[i], f_az[i]]);
-        }
-        const centered = matrix.map(r => r.map((v, j) => v - means[j]));
-
-        // 4. Power Iteration para autovector (PC1)
-        let ev = [1, 1, 1];
-        for(let i=0; i<8; i++) {
-            let next_ev = [0, 0, 0];
-            for(let r=0; r<3; r++) {
-                for(let c=0; c<3; c++) {
-                    let cov_rc = 0;
-                    centered.forEach(row => cov_rc += (row[r] * row[c]) / (n-1));
-                    next_ev[r] += cov_rc * ev[c];
-                }
+            const n = pointsToAnalyze;
+            const matrix = [];
+            const means = [0, 0, 0];
+            for(let i=0; i<n; i++) {
+                means[0] += f_ax[i]/n; means[1] += f_ay[i]/n; means[2] += f_az[i]/n;
+                matrix.push([f_ax[i], f_ay[i], f_az[i]]);
             }
-            const norm = Math.sqrt(next_ev.reduce((s, x) => s + x*x, 0));
-            ev = next_ev.map(x => x / (norm || 1));
+            const centered = matrix.map(r => r.map((v, j) => v - means[j]));
+
+            let ev = [1, 1, 1];
+            for(let i=0; i<8; i++) {
+                let next_ev = [0, 0, 0];
+                for(let r=0; r<3; r++) {
+                    for(let c=0; c<3; c++) {
+                        let cov_rc = 0;
+                        centered.forEach(row => cov_rc += (row[r] * row[c]) / (n-1));
+                        next_ev[r] += cov_rc * ev[c];
+                    }
+                }
+                const norm = Math.sqrt(next_ev.reduce((s, x) => s + x*x, 0));
+                ev = next_ev.map(x => x / (norm || 1));
+            }
+            signalToAnalyze = centered.map(r => r.reduce((s, v, j) => s + v * ev[j], 0));
+            
+            document.getElementById('m-axis-label').innerText = "Vector PCA";
+            document.getElementById('m-axis').innerText = `[${ev[0].toFixed(2)}, ${ev[1].toFixed(2)}, ${ev[2].toFixed(2)}]`;
+            charts.pca.setTitle({text: 'Componente Principal (PCA)'});
+
+        } else if (mode === 'mag') {
+            // --- MODO MAGNITUD ---
+            let mag_raw = [];
+            for(let i=0; i<pointsToAnalyze; i++) {
+                mag_raw.push(Math.sqrt(ax_slice[i]*ax_slice[i] + ay_slice[i]*ay_slice[i] + az_slice[i]*az_slice[i]));
+            }
+            // Filtramos la magnitud. El High-Pass quitará automáticamente el +1G de la gravedad.
+            let f_mag = applyMovingAverage(mag_raw, smoothWin);
+            f_mag = applyIIRFilter(f_mag, lpFreq, 'low', dt);
+            f_mag = applyIIRFilter(f_mag, hpFreq, 'high', dt);
+            
+            signalToAnalyze = f_mag;
+
+            document.getElementById('m-axis-label').innerText = "Métrica";
+            document.getElementById('m-axis').innerText = `Magnitud 3D`;
+            charts.pca.setTitle({text: 'Magnitud (Filtrada - Sin 1G)'});
         }
 
-        const projection = centered.map(r => r.reduce((s, v, j) => s + v * ev[j], 0));
-        charts.pca.series[0].setData(projection.map((v, i) => [t_slice[i], v]), true, false, false);
-        document.getElementById('m-axis').innerText = `[${ev[0].toFixed(2)}, ${ev[1].toFixed(2)}, ${ev[2].toFixed(2)}]`;
+        charts.pca.series[0].setData(signalToAnalyze.map((v, i) => [t_slice[i], v]), true, false, false);
 
-        // 5. Cálculo FFT sobre la señal filtrada con Ponderación de Espectro
-        const fftLen = Math.pow(2, Math.floor(Math.log2(projection.length)));
-        const signal = projection.slice(-fftLen);
+        // 5. Cálculo FFT
+        const fftLen = Math.pow(2, Math.floor(Math.log2(signalToAnalyze.length)));
+        const signal = signalToAnalyze.slice(-fftLen);
         const spectrum = [];
         let maxP = 0, domF = 0;
 
@@ -743,17 +490,11 @@
             let mag = Math.sqrt(re*re + im*im);
             const freq = k * (actualFS / fftLen);
             
-            // Ponderación (Transformar la aceleración a Velocidad o Desplazamiento en dominio de frecuencia)
-            // Se atenúan fuertemente las altas frecuencias porque dividimos por freq o freq^2
             if (freq > 0) {
-                if (fftWeight === 1) { // Velocidad (1/f)
-                    mag = mag / freq;
-                } else if (fftWeight === 2) { // Desplazamiento (1/f²)
-                    mag = mag / (freq * freq);
-                }
+                if (fftWeight === 1) mag = mag / freq;           // Velocidad
+                else if (fftWeight === 2) mag = mag / (freq * freq); // Desplazamiento
             }
             
-            // Restringir el análisis visual y matemático a los márgenes definidos
             if (freq >= fftMin && freq <= fftMax) {
                 spectrum.push([freq, mag]);
                 if (k > 0 && mag > maxP) { maxP = mag; domF = freq; }
@@ -766,18 +507,53 @@
         document.getElementById('m-pwr').innerText = maxP.toFixed(2);
     }, 100);
 
+    // --- Grabación ---
+    function startRecording() {
+        recordedSession = []; isRecording = true;
+        document.getElementById('btn-record').disabled = true;
+        document.getElementById('btn-record').classList.add('active');
+        document.getElementById('btn-stop').disabled = false;
+        log("Grabación iniciada...", "warning");
+    }
+
+    function stopRecording() {
+        isRecording = false;
+        document.getElementById('btn-record').disabled = false;
+        document.getElementById('btn-record').classList.remove('active');
+        document.getElementById('btn-stop').disabled = true;
+        if (recordedSession.length === 0) { log("No hay datos grabados.", "error"); return; }
+        downloadCSV();
+    }
+
+    function downloadCSV() {
+        const headers = ["Timestamp", "Accel_X", "Accel_Y", "Accel_Z", "Gyro_X", "Gyro_Y", "Gyro_Z"];
+        const rows = recordedSession.map(s => [s.timestamp, s.ax, s.ay, s.az, s.gx, s.gy, s.gz]);
+        let csvContent = "data:text/csv;charset=utf-8," + headers.join(",") + "\n" + rows.map(e => e.join(",")).join("\n");
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", `captura_${Date.now()}.csv`);
+        document.body.appendChild(link); link.click(); document.body.removeChild(link);
+        log("CSV generado y descargado.", "success");
+    }
+
     // --- Conectividad ---
     async function connectUSB() {
         try {
-            log("Solicitando acceso a puerto serie...");
+            log("Solicitando puerto serie USB...");
             const port = await navigator.serial.requestPort();
             await port.open({ baudRate: 115200 });
 
-            // CONFIGURACIÓN CRÍTICA PARA ESP32-C3: 
-            // Fuerza las señales de control para que el ESP32 habilite la salida del puerto Serie USB (CDC)
-            await port.setSignals({ dataTerminalReady: true, requestToSend: true });
+            // PROTECCIÓN: Algunos PCs lanzan error al forzar señales DTR, lo intentamos pero no bloqueamos si falla.
+            try {
+                await port.setSignals({ dataTerminalReady: true, requestToSend: true });
+            } catch (e) {
+                log("Aviso: Las señales DTR/RTS no se pudieron forzar (Normal en algunos sistemas).", "warning");
+            }
             
-            log("Puerto serie abierto a 115200 baudios. Esperando datos...", "success");
+            log("Puerto abierto. Esperando flujo de datos...", "info");
+            usbFirstPacketReceived = false;
+
             const decoder = new TextDecoderStream();
             port.readable.pipeTo(decoder.writable);
             const reader = decoder.readable.getReader();
@@ -788,36 +564,25 @@
                 if (done) break;
                 buf += value;
                 
-                // Dividir de forma robusta por saltos de línea (\r\n o \n)
                 const lines = buf.split(/\r?\n/);
-                buf = lines.pop(); // Mantener el último fragmento incompleto
-                
+                buf = lines.pop(); 
                 lines.forEach(processIncoming);
             }
-        } catch (err) { log("Error de conexión USB: " + err.message, "error"); }
+        } catch (err) { log("Error USB: " + err.message, "error"); }
     }
 
     async function connectBLE() {
         try {
             log("Escaneando dispositivos BLE...");
             const device = await navigator.bluetooth.requestDevice({
-                filters: [{ namePrefix: "ESP32" }], // Nombre más tolerante ("ESP32" detectará a "ESP32-C3-Serial")
+                filters: [{ namePrefix: "ESP32" }],
                 optionalServices: ["6e400001-b5a3-f393-e0a9-e50e24dcca9e"]
             });
 
-            // Registrar si ocurre una desconexión abrupta
-            device.addEventListener('gattserverdisconnected', () => {
-                log("¡Conexión BLE cortada por el dispositivo!", "error");
-            });
+            device.addEventListener('gattserverdisconnected', () => { log("Conexión BLE cortada.", "error"); });
 
-            log("Emparejado. Solicitando servicios al ESP32...", "info");
             const server = await device.gatt.connect();
-            
-            // --- TRUCO DE ESTABILIDAD ---
-            // Esperamos medio segundo antes de pedir las características. 
-            // Esto evita el error: "GATT Server is disconnected. Cannot retrieve services"
-            await new Promise(resolve => setTimeout(resolve, 500));
-
+            await new Promise(resolve => setTimeout(resolve, 500)); // Estabilidad
             const service = await server.getPrimaryService("6e400001-b5a3-f393-e0a9-e50e24dcca9e");
             const tx = await service.getCharacteristic("6e400003-b5a3-f393-e0a9-e50e24dcca9e");
             
@@ -826,10 +591,8 @@
                 const text = new TextDecoder().decode(e.target.value);
                 processIncoming(text);
             });
-            log("BLE conectado de forma estable y recibiendo datos", "success");
-        } catch (err) { 
-            log("Error BLE: " + err.message, "error"); 
-        }
+            log("BLE conectado recibiendo datos.", "success");
+        } catch (err) { log("Error BLE: " + err.message, "error"); }
     }
 </script>
 </body>
