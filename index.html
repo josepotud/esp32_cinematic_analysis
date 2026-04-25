@@ -190,6 +190,7 @@
     let isRecording = false;
     let dataStarted = false;
     let timeOffset = null; 
+    let activeBleDevice = null;
 
     const ACCEL_SCALE = 16384.0;
     const GYRO_SCALE = 2000.0 / 32768.0;
@@ -343,11 +344,11 @@
         let res = [];
         
         if (type === 'low') {
-            res.push(data[0]); // Pasa-bajos arranca en el primer valor
+            res.push(data[0]); 
             let alpha = dt / (rc + dt);
             for (let i = 1; i < data.length; i++) res.push(res[i-1] + alpha * (data[i] - res[i-1]));
         } else if (type === 'high') {
-            res.push(0); // CORRECCIÓN: Pasa-altos DEBE arrancar en 0 para evitar transitorios masivos
+            res.push(0); 
             let alpha = rc / (rc + dt);
             for (let i = 1; i < data.length; i++) res.push(alpha * (res[i-1] + data[i] - data[i-1]));
         }
@@ -429,7 +430,7 @@
             }
             let f_mag = applyMovingAverage(mag_raw, smoothWin);
             f_mag = applyIIRFilter(f_mag, lpFreq, 'low', dt);
-            f_mag = applyIIRFilter(f_mag, hpFreq, 'high', dt); // Al tener inicialización 0, extrae el 1G perfecto sin curva
+            f_mag = applyIIRFilter(f_mag, hpFreq, 'high', dt); 
             
             signalToAnalyze = f_mag;
 
@@ -444,7 +445,6 @@
         const fftLen = Math.pow(2, Math.floor(Math.log2(signalToAnalyze.length)));
         const signal = signalToAnalyze.slice(-fftLen);
         
-        // CORRECCIÓN: Aplicar Ventana de Hanning para atenuar los bordes de corte y evitar "fugas espectrales"
         for (let i = 0; i < fftLen; i++) {
             signal[i] = signal[i] * (0.5 * (1 - Math.cos((2 * Math.PI * i) / (fftLen - 1))));
         }
@@ -513,22 +513,49 @@
     async function connectBLE() {
         try {
             log("Escaneando dispositivos BLE...");
-            const device = await navigator.bluetooth.requestDevice({
+            activeBleDevice = await navigator.bluetooth.requestDevice({
                 filters: [{ namePrefix: "ESP32" }],
                 optionalServices: ["6e400001-b5a3-f393-e0a9-e50e24dcca9e"]
             });
 
-            device.addEventListener('gattserverdisconnected', () => { log("Conexión BLE cortada.", "error"); });
+            activeBleDevice.addEventListener('gattserverdisconnected', () => { 
+                log("Conexión BLE cortada inesperadamente.", "error"); 
+            });
 
-            const server = await device.gatt.connect();
-            await new Promise(resolve => setTimeout(resolve, 500)); 
-            const service = await server.getPrimaryService("6e400001-b5a3-f393-e0a9-e50e24dcca9e");
-            const tx = await service.getCharacteristic("6e400003-b5a3-f393-e0a9-e50e24dcca9e");
+            let server;
+            let service;
+            let tx;
+            let attempts = 3;
+
+            // Bucle de reintentos para estabilizar la conexión GATT
+            while (attempts > 0) {
+                try {
+                    log(`Conectando al servidor GATT... (Intento ${4 - attempts}/3)`, "info");
+                    server = await activeBleDevice.gatt.connect();
+                    
+                    // Pausa de estabilización más generosa para que el ESP32 no colapse
+                    await new Promise(resolve => setTimeout(resolve, 1000)); 
+                    
+                    if (!server.connected) {
+                        throw new Error("El dispositivo cortó la conexión al instante.");
+                    }
+
+                    service = await server.getPrimaryService("6e400001-b5a3-f393-e0a9-e50e24dcca9e");
+                    tx = await service.getCharacteristic("6e400003-b5a3-f393-e0a9-e50e24dcca9e");
+                    
+                    break; // Éxito, salimos del bucle de reintentos
+                } catch (err) {
+                    attempts--;
+                    if (attempts === 0) throw err;
+                    log(`Intento fallido: ${err.message}. Reintentando en 1.5s...`, "warning");
+                    await new Promise(resolve => setTimeout(resolve, 1500));
+                }
+            }
             
             await tx.startNotifications();
             dataStarted = false;
             timeOffset = null; 
-            log("BLE suscrito. Decodificando binario...", "info");
+            log("BLE suscrito. Decodificando binario...", "success");
 
             tx.addEventListener('characteristicvaluechanged', (e) => {
                 const view = e.target.value; 
