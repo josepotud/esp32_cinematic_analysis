@@ -130,7 +130,7 @@
             </div>
             <div class="setting-item" title="Intervalo de actualización">
                 <label>Refresco (s)</label>
-                <input type="number" id="cfg-refresh" value="0.5" step="0.1" min="0.1">
+                <input type="number" id="cfg-refresh" value="0.05" step="0.01" min="0.01">
             </div>
             <div class="setting-item" title="Ventana de tiempo para analizar">
                 <label>Ventana (s)</label>
@@ -142,11 +142,11 @@
             </div>
             <div class="setting-item" title="Filtro Pasa Altos (Elimina Gravedad)">
                 <label>High-Pass (Hz)</label>
-                <input type="number" id="cfg-hp" value="0.5" step="0.1" min="0">
+                <input type="number" id="cfg-hp" value="2" step="0.1" min="0">
             </div>
             <div class="setting-item" title="Filtro Pasa Bajos">
                 <label>Low-Pass (Hz)</label>
-                <input type="number" id="cfg-lp" value="20" step="1" min="0">
+                <input type="number" id="cfg-lp" value="12" step="1" min="0">
             </div>
             <div class="setting-item" title="Ponderación espectral">
                 <label>Ponderación</label>
@@ -158,11 +158,11 @@
             </div>
             <div class="setting-item">
                 <label>FFT Mín (Hz)</label>
-                <input type="number" id="cfg-fft-min" value="0.5" step="0.1" min="0">
+                <input type="number" id="cfg-fft-min" value="2" step="0.1" min="0">
             </div>
             <div class="setting-item">
                 <label>FFT Máx (Hz)</label>
-                <input type="number" id="cfg-fft-max" value="18" step="1" min="1">
+                <input type="number" id="cfg-fft-max" value="12" step="1" min="1">
             </div>
         </div>
 
@@ -361,7 +361,7 @@
     setInterval(() => {
         if (rawData.ax.length < 32) return;
         
-        const refreshMs = (parseFloat(document.getElementById('cfg-refresh').value) || 0.5) * 1000;
+        const refreshMs = (parseFloat(document.getElementById('cfg-refresh').value) || 0.05) * 1000;
         const now = Date.now();
         if (now - lastAnalysisTime < refreshMs) return;
         lastAnalysisTime = now;
@@ -370,9 +370,9 @@
         const mode = document.getElementById('cfg-mode').value;
         const smoothWin = parseInt(document.getElementById('cfg-smooth').value) || 1;
         const hpFreq = parseFloat(document.getElementById('cfg-hp').value) || 0;
-        const lpFreq = parseFloat(document.getElementById('cfg-lp').value) || 20;
+        const lpFreq = parseFloat(document.getElementById('cfg-lp').value) || 12;
         const fftMin = parseFloat(document.getElementById('cfg-fft-min').value) || 0;
-        const fftMax = parseFloat(document.getElementById('cfg-fft-max').value) || 18;
+        const fftMax = parseFloat(document.getElementById('cfg-fft-max').value) || 12;
         const fftWeight = parseInt(document.getElementById('cfg-fft-weight').value) || 1;
         const windowSec = parseFloat(document.getElementById('cfg-window').value) || 5;
         
@@ -478,7 +478,7 @@
         charts.fft.series[0].setData(spectrum, true);
         document.getElementById('m-hz').innerText = domF.toFixed(2) + " Hz";
         document.getElementById('m-pwr').innerText = maxP.toFixed(2);
-    }, 100);
+    }, 50);
 
     // --- Conectividad ---
     async function connectUSB() {
