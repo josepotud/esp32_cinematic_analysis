@@ -208,8 +208,8 @@
             font-weight: 600;
         }
 
-        .setting-item input {
-            width: 55px;
+        .setting-item input, .setting-item select {
+            width: 75px;
             padding: 4px;
             background: var(--bg-secondary);
             border: 1px solid var(--border);
@@ -217,6 +217,7 @@
             border-radius: 4px;
             font-family: inherit;
             text-align: right;
+            outline: none;
         }
 
         #console-container {
@@ -413,6 +414,14 @@
             <div class="setting-item" title="Filtro Pasa Bajos: Elimina ruido eléctrico de alta frec.">
                 <label>Low-Pass (Hz)</label>
                 <input type="number" id="cfg-lp" value="40" step="1" min="0">
+            </div>
+            <div class="setting-item" title="Integra la señal de aceleración para destacar movimientos reales frente a vibraciones rápidas">
+                <label>Ponderación</label>
+                <select id="cfg-fft-weight">
+                    <option value="0">Accel (Raw)</option>
+                    <option value="1" selected>Veloc. (1/f)</option>
+                    <option value="2">Despl. (1/f²)</option>
+                </select>
             </div>
             <div class="setting-item">
                 <label>FFT Mín (Hz)</label>
@@ -618,9 +627,9 @@
         const lpFreq = parseFloat(document.getElementById('cfg-lp').value) || 0;
         const fftMin = parseFloat(document.getElementById('cfg-fft-min').value) || 0;
         const fftMax = parseFloat(document.getElementById('cfg-fft-max').value) || (FREQ_SAMPLING/2);
+        const fftWeight = parseInt(document.getElementById('cfg-fft-weight').value) || 0;
         
-        // --- CORRECCIÓN: Frecuencia de muestreo dinámica ---
-        // Calcula la tasa real de los paquetes recibidos para evitar desfases en la FFT
+        // --- Frecuencia de muestreo dinámica ---
         const timeSpanMs = rawData.t[n - 1] - rawData.t[0];
         const actualFS = timeSpanMs > 0 ? (n / timeSpanMs) * 1000 : FREQ_SAMPLING;
         const dt = 1.0 / actualFS;
@@ -667,7 +676,7 @@
         charts.pca.series[0].setData(projection.map((v, i) => [rawData.t[i], v]), true, false, false);
         document.getElementById('m-axis').innerText = `[${ev[0].toFixed(2)}, ${ev[1].toFixed(2)}, ${ev[2].toFixed(2)}]`;
 
-        // 5. Cálculo FFT sobre la señal filtrada
+        // 5. Cálculo FFT sobre la señal filtrada con Ponderación de Espectro
         const fftLen = Math.pow(2, Math.floor(Math.log2(projection.length)));
         const signal = projection.slice(-fftLen);
         const spectrum = [];
@@ -680,10 +689,19 @@
                 re += signal[t] * Math.cos(angle);
                 im -= signal[t] * Math.sin(angle);
             }
-            const mag = Math.sqrt(re*re + im*im);
             
-            // Usar la frecuencia de muestreo real en lugar de la teórica
+            let mag = Math.sqrt(re*re + im*im);
             const freq = k * (actualFS / fftLen);
+            
+            // Ponderación (Transformar la aceleración a Velocidad o Desplazamiento en dominio de frecuencia)
+            // Se atenúan fuertemente las altas frecuencias porque dividimos por freq o freq^2
+            if (freq > 0) {
+                if (fftWeight === 1) { // Velocidad (1/f)
+                    mag = mag / freq;
+                } else if (fftWeight === 2) { // Desplazamiento (1/f²)
+                    mag = mag / (freq * freq);
+                }
+            }
             
             // Restringir el análisis visual y matemático a los márgenes definidos
             if (freq >= fftMin && freq <= fftMax) {
