@@ -189,6 +189,7 @@
     let recordedSession = [];
     let isRecording = false;
     let dataStarted = false;
+    let timeOffset = null; // Para sincronizar el reloj del ESP32 con la hora real
 
     // Escalas de conversión del BMI160
     const ACCEL_SCALE = 16384.0;
@@ -196,8 +197,9 @@
 
     function getMaxDataPoints() {
         const windowEl = document.getElementById('cfg-window');
+        // Usamos exactamente el tamaño de la ventana (w) para que las gráficas RAW y PCA estén idénticas
         const w = windowEl ? (parseFloat(windowEl.value) || 5) : 5;
-        return Math.floor(FREQ_SAMPLING * Math.max(10, w));
+        return Math.floor(FREQ_SAMPLING * w);
     }
 
     const isDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -233,11 +235,20 @@
         fft: Highcharts.chart('c-fft', { ...createChartConfig('Análisis de Frecuencia (FFT)', [{ name: 'Densidad Espectral', color: '#16a34a', data: [], type: 'area' }]), xAxis: { labels: { style: { color: '#64748b' } }, title: { text: 'Hz', style: { color: '#64748b' } } } })
     };
 
-    // FUNCIÓN CENTRALIZADA PARA PROCESAR LOS DATOS YA ESCALADOS
-    function processPhysData(ax, ay, az, gx, gy, gz) {
-        if (!dataStarted) { dataStarted = true; log("Flujo de datos iniciado correctamente.", "success"); }
+    // FUNCIÓN CENTRALIZADA PARA PROCESAR LOS DATOS (AHORA INCLUYE TIMESTAMP DEL SENSOR)
+    function processPhysData(t_esp, ax, ay, az, gx, gy, gz) {
+        if (!dataStarted) { 
+            dataStarted = true; 
+            timeOffset = Date.now() - t_esp; // Calculamos el desfase exacto en el primer paquete
+            log("Flujo de datos iniciado. Reloj sincronizado con el microcontrolador.", "success"); 
+        }
 
-        const now = Date.now();
+        // Si timeOffset se perdió, lo recuperamos
+        if (timeOffset === null) timeOffset = Date.now() - t_esp;
+
+        // La marca de tiempo real es el reloj del ESP32 + nuestra diferencia horaria calculada
+        const now = t_esp + timeOffset;
+
         rawData.ax.push(ax); rawData.ay.push(ay); rawData.az.push(az);
         rawData.gx.push(gx); rawData.gy.push(gy); rawData.gz.push(gz);
         rawData.t.push(now);
@@ -247,16 +258,21 @@
         }
 
         const currentMaxPoints = getMaxDataPoints();
-        if (rawData.ax.length > currentMaxPoints) { Object.keys(rawData).forEach(k => rawData[k].shift()); }
+        
+        // Limpiamos los datos antiguos masivamente si es necesario (ej. cambio de ventana brusco)
+        if (rawData.ax.length > currentMaxPoints) { 
+            const overflow = rawData.ax.length - currentMaxPoints;
+            Object.keys(rawData).forEach(k => rawData[k].splice(0, overflow)); 
+        }
 
-        const shift = charts.acc.series[0].data.length > currentMaxPoints;
+        const shift = charts.acc.series[0].data.length >= currentMaxPoints;
         charts.acc.series[0].addPoint([now, ax], false, shift);
         charts.acc.series[1].addPoint([now, ay], false, shift);
-        charts.acc.series[2].addPoint([now, az], true, shift);
+        charts.acc.series[2].addPoint([now, az], true, shift); // Redibujamos
 
         charts.gyro.series[0].addPoint([now, gx], false, shift);
         charts.gyro.series[1].addPoint([now, gy], false, shift);
-        charts.gyro.series[2].addPoint([now, gz], true, shift);
+        charts.gyro.series[2].addPoint([now, gz], true, shift); // Redibujamos
     }
 
     // LECTOR USB (CSV a Valores Físicos)
@@ -264,14 +280,26 @@
         line = line.trim();
         if (!line) return;
         const parts = line.split(',');
-        if (parts.length === 6) {
+        
+        // Soporta el nuevo firmware de 7 valores (incluye timestamp) y el viejo de 6
+        if (parts.length === 7) {
+            const t_esp = parseInt(parts[0]);
+            const ax = parseInt(parts[1]) / ACCEL_SCALE;
+            const ay = parseInt(parts[2]) / ACCEL_SCALE;
+            const az = parseInt(parts[3]) / ACCEL_SCALE;
+            const gx = parseInt(parts[4]) * GYRO_SCALE;
+            const gy = parseInt(parts[5]) * GYRO_SCALE;
+            const gz = parseInt(parts[6]) * GYRO_SCALE;
+            processPhysData(t_esp, ax, ay, az, gx, gy, gz);
+        } else if (parts.length === 6) {
+            const t_esp = Date.now(); // Fallback si usas el firmware antiguo
             const ax = parseInt(parts[0]) / ACCEL_SCALE;
             const ay = parseInt(parts[1]) / ACCEL_SCALE;
             const az = parseInt(parts[2]) / ACCEL_SCALE;
             const gx = parseInt(parts[3]) * GYRO_SCALE;
             const gy = parseInt(parts[4]) * GYRO_SCALE;
             const gz = parseInt(parts[5]) * GYRO_SCALE;
-            processPhysData(ax, ay, az, gx, gy, gz);
+            processPhysData(t_esp, ax, ay, az, gx, gy, gz);
         }
     }
 
@@ -353,6 +381,7 @@
         const fftWeight = parseInt(document.getElementById('cfg-fft-weight').value) || 1;
         const windowSec = parseFloat(document.getElementById('cfg-window').value) || 5;
         
+        // --- Frecuencia de muestreo basada en las marcas de tiempo reales (timestamp) ---
         const timeSpanMs = rawData.t[n_total - 1] - rawData.t[0];
         const actualFS = timeSpanMs > 0 ? (n_total / timeSpanMs) * 1000 : FREQ_SAMPLING;
         const dt = 1.0 / actualFS;
@@ -418,7 +447,7 @@
 
         charts.pca.series[0].setData(signalToAnalyze.map((v, i) => [t_slice[i], v]), true, false, false);
 
-        // 5. Cálculo FFT
+        // 5. Cálculo FFT (Sincronizado al reloj real)
         const fftLen = Math.pow(2, Math.floor(Math.log2(signalToAnalyze.length)));
         const signal = signalToAnalyze.slice(-fftLen);
         const spectrum = [];
@@ -463,6 +492,7 @@
             
             log("Puerto abierto. Esperando CSV...", "info");
             dataStarted = false;
+            timeOffset = null; // Reiniciar sincronización de reloj
 
             const decoder = new TextDecoderStream();
             port.readable.pipeTo(decoder.writable);
@@ -498,20 +528,31 @@
             
             await tx.startNotifications();
             dataStarted = false;
+            timeOffset = null; // Reiniciar sincronización de reloj
             log("BLE suscrito. Decodificando binario...", "info");
 
             tx.addEventListener('characteristicvaluechanged', (e) => {
-                // LECTOR BLUETOOTH (Binario RAW de 12 Bytes)
                 const view = e.target.value; 
-                if(view.byteLength === 12) {
-                    // Los datos llegan en formato Int16 (Little Endian, típico de los procesadores ESP32)
+                if(view.byteLength === 16) {
+                    // Nuevo payload BLE con marca de tiempo (4 bytes offset 0)
+                    const t_esp = view.getUint32(0, true);
+                    const ax = view.getInt16(4, true) / ACCEL_SCALE;
+                    const ay = view.getInt16(6, true) / ACCEL_SCALE;
+                    const az = view.getInt16(8, true) / ACCEL_SCALE;
+                    const gx = view.getInt16(10, true) * GYRO_SCALE;
+                    const gy = view.getInt16(12, true) * GYRO_SCALE;
+                    const gz = view.getInt16(14, true) * GYRO_SCALE;
+                    processPhysData(t_esp, ax, ay, az, gx, gy, gz);
+                } else if (view.byteLength === 12) {
+                    // Fallback para firmware anterior
+                    const t_esp = Date.now();
                     const ax = view.getInt16(0, true) / ACCEL_SCALE;
                     const ay = view.getInt16(2, true) / ACCEL_SCALE;
                     const az = view.getInt16(4, true) / ACCEL_SCALE;
                     const gx = view.getInt16(6, true) * GYRO_SCALE;
                     const gy = view.getInt16(8, true) * GYRO_SCALE;
                     const gz = view.getInt16(10, true) * GYRO_SCALE;
-                    processPhysData(ax, ay, az, gx, gy, gz);
+                    processPhysData(t_esp, ax, ay, az, gx, gy, gz);
                 }
             });
         } catch (err) { log("Error BLE: " + err.message, "error"); }
