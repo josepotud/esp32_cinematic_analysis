@@ -618,7 +618,12 @@
         const lpFreq = parseFloat(document.getElementById('cfg-lp').value) || 0;
         const fftMin = parseFloat(document.getElementById('cfg-fft-min').value) || 0;
         const fftMax = parseFloat(document.getElementById('cfg-fft-max').value) || (FREQ_SAMPLING/2);
-        const dt = 1.0 / FREQ_SAMPLING;
+        
+        // --- CORRECCIÓN: Frecuencia de muestreo dinámica ---
+        // Calcula la tasa real de los paquetes recibidos para evitar desfases en la FFT
+        const timeSpanMs = rawData.t[n - 1] - rawData.t[0];
+        const actualFS = timeSpanMs > 0 ? (n / timeSpanMs) * 1000 : FREQ_SAMPLING;
+        const dt = 1.0 / actualFS;
 
         // 2. Extraer y aplicar filtros en cascada
         let f_ax = applyMovingAverage(rawData.ax, smoothWin);
@@ -676,7 +681,9 @@
                 im -= signal[t] * Math.sin(angle);
             }
             const mag = Math.sqrt(re*re + im*im);
-            const freq = k * (FREQ_SAMPLING / fftLen);
+            
+            // Usar la frecuencia de muestreo real en lugar de la teórica
+            const freq = k * (actualFS / fftLen);
             
             // Restringir el análisis visual y matemático a los márgenes definidos
             if (freq >= fftMin && freq <= fftMax) {
