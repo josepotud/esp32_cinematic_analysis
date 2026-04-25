@@ -189,15 +189,13 @@
     let recordedSession = [];
     let isRecording = false;
     let dataStarted = false;
-    let timeOffset = null; // Para sincronizar el reloj del ESP32 con la hora real
+    let timeOffset = null; 
 
-    // Escalas de conversión del BMI160
     const ACCEL_SCALE = 16384.0;
     const GYRO_SCALE = 2000.0 / 32768.0;
 
     function getMaxDataPoints() {
         const windowEl = document.getElementById('cfg-window');
-        // Usamos exactamente el tamaño de la ventana (w) para que las gráficas RAW y PCA estén idénticas
         const w = windowEl ? (parseFloat(windowEl.value) || 5) : 5;
         return Math.floor(FREQ_SAMPLING * w);
     }
@@ -235,18 +233,15 @@
         fft: Highcharts.chart('c-fft', { ...createChartConfig('Análisis de Frecuencia (FFT)', [{ name: 'Densidad Espectral', color: '#16a34a', data: [], type: 'area' }]), xAxis: { labels: { style: { color: '#64748b' } }, title: { text: 'Hz', style: { color: '#64748b' } } } })
     };
 
-    // FUNCIÓN CENTRALIZADA PARA PROCESAR LOS DATOS (AHORA INCLUYE TIMESTAMP DEL SENSOR)
     function processPhysData(t_esp, ax, ay, az, gx, gy, gz) {
         if (!dataStarted) { 
             dataStarted = true; 
-            timeOffset = Date.now() - t_esp; // Calculamos el desfase exacto en el primer paquete
+            timeOffset = Date.now() - t_esp; 
             log("Flujo de datos iniciado. Reloj sincronizado con el microcontrolador.", "success"); 
         }
 
-        // Si timeOffset se perdió, lo recuperamos
         if (timeOffset === null) timeOffset = Date.now() - t_esp;
 
-        // La marca de tiempo real es el reloj del ESP32 + nuestra diferencia horaria calculada
         const now = t_esp + timeOffset;
 
         rawData.ax.push(ax); rawData.ay.push(ay); rawData.az.push(az);
@@ -259,7 +254,6 @@
 
         const currentMaxPoints = getMaxDataPoints();
         
-        // Limpiamos los datos antiguos masivamente si es necesario (ej. cambio de ventana brusco)
         if (rawData.ax.length > currentMaxPoints) { 
             const overflow = rawData.ax.length - currentMaxPoints;
             Object.keys(rawData).forEach(k => rawData[k].splice(0, overflow)); 
@@ -268,20 +262,18 @@
         const shift = charts.acc.series[0].data.length >= currentMaxPoints;
         charts.acc.series[0].addPoint([now, ax], false, shift);
         charts.acc.series[1].addPoint([now, ay], false, shift);
-        charts.acc.series[2].addPoint([now, az], true, shift); // Redibujamos
+        charts.acc.series[2].addPoint([now, az], true, shift); 
 
         charts.gyro.series[0].addPoint([now, gx], false, shift);
         charts.gyro.series[1].addPoint([now, gy], false, shift);
-        charts.gyro.series[2].addPoint([now, gz], true, shift); // Redibujamos
+        charts.gyro.series[2].addPoint([now, gz], true, shift); 
     }
 
-    // LECTOR USB (CSV a Valores Físicos)
     function processUSBString(line) {
         line = line.trim();
         if (!line) return;
         const parts = line.split(',');
         
-        // Soporta el nuevo firmware de 7 valores (incluye timestamp) y el viejo de 6
         if (parts.length === 7) {
             const t_esp = parseInt(parts[0]);
             const ax = parseInt(parts[1]) / ACCEL_SCALE;
@@ -292,7 +284,7 @@
             const gz = parseInt(parts[6]) * GYRO_SCALE;
             processPhysData(t_esp, ax, ay, az, gx, gy, gz);
         } else if (parts.length === 6) {
-            const t_esp = Date.now(); // Fallback si usas el firmware antiguo
+            const t_esp = Date.now(); 
             const ax = parseInt(parts[0]) / ACCEL_SCALE;
             const ay = parseInt(parts[1]) / ACCEL_SCALE;
             const az = parseInt(parts[2]) / ACCEL_SCALE;
@@ -303,7 +295,6 @@
         }
     }
 
-    // --- Funciones de Grabación ---
     function startRecording() {
         recordedSession = []; isRecording = true;
         document.getElementById('btn-record').disabled = true;
@@ -349,11 +340,14 @@
     function applyIIRFilter(data, cutoff, type, dt) {
         if (!cutoff || cutoff <= 0 || cutoff >= 1/(2*dt)) return data;
         let rc = 1.0 / (cutoff * 2 * Math.PI);
-        let res = [data[0]];
+        let res = [];
+        
         if (type === 'low') {
+            res.push(data[0]); // Pasa-bajos arranca en el primer valor
             let alpha = dt / (rc + dt);
             for (let i = 1; i < data.length; i++) res.push(res[i-1] + alpha * (data[i] - res[i-1]));
         } else if (type === 'high') {
+            res.push(0); // CORRECCIÓN: Pasa-altos DEBE arrancar en 0 para evitar transitorios masivos
             let alpha = rc / (rc + dt);
             for (let i = 1; i < data.length; i++) res.push(alpha * (res[i-1] + data[i] - data[i-1]));
         }
@@ -381,7 +375,6 @@
         const fftWeight = parseInt(document.getElementById('cfg-fft-weight').value) || 1;
         const windowSec = parseFloat(document.getElementById('cfg-window').value) || 5;
         
-        // --- Frecuencia de muestreo basada en las marcas de tiempo reales (timestamp) ---
         const timeSpanMs = rawData.t[n_total - 1] - rawData.t[0];
         const actualFS = timeSpanMs > 0 ? (n_total / timeSpanMs) * 1000 : FREQ_SAMPLING;
         const dt = 1.0 / actualFS;
@@ -436,7 +429,7 @@
             }
             let f_mag = applyMovingAverage(mag_raw, smoothWin);
             f_mag = applyIIRFilter(f_mag, lpFreq, 'low', dt);
-            f_mag = applyIIRFilter(f_mag, hpFreq, 'high', dt);
+            f_mag = applyIIRFilter(f_mag, hpFreq, 'high', dt); // Al tener inicialización 0, extrae el 1G perfecto sin curva
             
             signalToAnalyze = f_mag;
 
@@ -447,9 +440,15 @@
 
         charts.pca.series[0].setData(signalToAnalyze.map((v, i) => [t_slice[i], v]), true, false, false);
 
-        // 5. Cálculo FFT (Sincronizado al reloj real)
+        // 5. Cálculo FFT
         const fftLen = Math.pow(2, Math.floor(Math.log2(signalToAnalyze.length)));
         const signal = signalToAnalyze.slice(-fftLen);
+        
+        // CORRECCIÓN: Aplicar Ventana de Hanning para atenuar los bordes de corte y evitar "fugas espectrales"
+        for (let i = 0; i < fftLen; i++) {
+            signal[i] = signal[i] * (0.5 * (1 - Math.cos((2 * Math.PI * i) / (fftLen - 1))));
+        }
+
         const spectrum = [];
         let maxP = 0, domF = 0;
 
@@ -492,7 +491,7 @@
             
             log("Puerto abierto. Esperando CSV...", "info");
             dataStarted = false;
-            timeOffset = null; // Reiniciar sincronización de reloj
+            timeOffset = null; 
 
             const decoder = new TextDecoderStream();
             port.readable.pipeTo(decoder.writable);
@@ -528,13 +527,12 @@
             
             await tx.startNotifications();
             dataStarted = false;
-            timeOffset = null; // Reiniciar sincronización de reloj
+            timeOffset = null; 
             log("BLE suscrito. Decodificando binario...", "info");
 
             tx.addEventListener('characteristicvaluechanged', (e) => {
                 const view = e.target.value; 
                 if(view.byteLength === 16) {
-                    // Nuevo payload BLE con marca de tiempo (4 bytes offset 0)
                     const t_esp = view.getUint32(0, true);
                     const ax = view.getInt16(4, true) / ACCEL_SCALE;
                     const ay = view.getInt16(6, true) / ACCEL_SCALE;
@@ -544,7 +542,6 @@
                     const gz = view.getInt16(14, true) * GYRO_SCALE;
                     processPhysData(t_esp, ax, ay, az, gx, gy, gz);
                 } else if (view.byteLength === 12) {
-                    // Fallback para firmware anterior
                     const t_esp = Date.now();
                     const ax = view.getInt16(0, true) / ACCEL_SCALE;
                     const ay = view.getInt16(2, true) / ACCEL_SCALE;
