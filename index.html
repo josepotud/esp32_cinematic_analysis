@@ -128,9 +128,8 @@
             100% { opacity: 1; }
         }
 
-        .desktop-only {
-            display: block;
-        }
+        .desktop-only { display: block; }
+        .mobile-only { display: none !important; }
 
         /* --- Main Content Layout --- */
         main {
@@ -151,6 +150,12 @@
             padding: 16px;
             gap: 16px;
             overflow-y: auto;
+        }
+
+        .metrics-container {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
         }
 
         .metric-card {
@@ -185,12 +190,25 @@
         }
 
         .console-header {
-            padding: 6px 12px;
+            padding: 10px 12px;
             background: #0f172a;
             color: #94a3b8;
-            font-size: 0.65rem;
+            font-size: 0.75rem;
             font-weight: 700;
             text-transform: uppercase;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .close-console-btn {
+            background: transparent;
+            border: none;
+            color: #f1f5f9;
+            font-size: 1.2rem;
+            padding: 0;
+            line-height: 1;
+            cursor: pointer;
         }
 
         #console {
@@ -203,7 +221,7 @@
             line-height: 1.5;
         }
 
-        .log-entry { margin-bottom: 4px; }
+        .log-entry { margin-bottom: 4px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 2px; }
         .log-time { color: #64748b; margin-right: 8px; }
         .log-info { color: #3b82f6; }
         .log-success { color: #22c55e; }
@@ -215,7 +233,7 @@
             padding: 16px;
             display: grid;
             grid-template-columns: repeat(2, 1fr);
-            grid-template-rows: repeat(3, 1fr);
+            grid-template-rows: repeat(2, 1fr);
             gap: 16px;
             overflow-y: auto;
         }
@@ -226,64 +244,74 @@
             border-radius: 12px;
             padding: 12px;
             position: relative;
+            min-height: 250px;
         }
 
         .full-width { grid-column: span 2; }
 
         /* --- Responsive Adjustments --- */
         @media (max-width: 900px) {
-            header {
-                justify-content: center;
-                text-align: center;
-            }
-            .brand {
-                width: 100%;
-                margin-bottom: 4px;
-            }
-            .controls {
-                width: 100%;
-                justify-content: center;
-            }
-            .desktop-only {
-                display: none;
-            }
+            header { justify-content: center; text-align: center; }
+            .brand { width: 100%; margin-bottom: 4px; }
+            .controls { width: 100%; justify-content: center; }
+            .desktop-only { display: none; }
         }
 
         @media (max-width: 768px) {
+            .mobile-only { display: flex !important; }
             main {
                 grid-template-columns: 1fr;
-                grid-template-rows: auto auto 1fr;
+                grid-template-rows: auto 1fr;
             }
             aside {
                 grid-row: auto;
-                height: 350px;
+                height: auto;
                 border-right: none;
                 border-bottom: 1px solid var(--border);
+                padding: 12px;
             }
+            
+            /* Métricas en fila para móvil */
+            .metrics-container {
+                flex-direction: row;
+                flex-wrap: nowrap;
+                overflow-x: auto;
+                gap: 8px;
+                padding-bottom: 4px;
+            }
+            .metric-card {
+                flex: 1;
+                min-width: 110px;
+                padding: 10px;
+                text-align: center;
+            }
+            .metric-value { font-size: 1.2rem; }
+
+            /* Consola Flotante en Móvil */
+            #console-container {
+                position: fixed;
+                top: 0; left: 0; width: 100vw; height: 100vh;
+                border-radius: 0;
+                z-index: 1000;
+                transform: translateY(100%);
+                transition: transform 0.3s ease-in-out;
+            }
+            #console-container.show {
+                transform: translateY(0);
+            }
+
             .dashboard-content {
                 grid-template-columns: 1fr;
+                padding: 12px;
             }
-            .full-width {
-                grid-column: auto;
-            }
-            .brand h1 {
-                font-size: 0.9rem;
-            }
+            .full-width { grid-column: auto; }
+            .brand h1 { font-size: 0.9rem; }
         }
 
         @media (max-width: 480px) {
-            header {
-                padding: 12px 16px;
-            }
-            .controls {
-                gap: 6px;
-            }
-            button {
-                padding: 6px 10px;
-                font-size: 0.75rem;
-                flex: 1 1 auto;
-                justify-content: center;
-            }
+            header { padding: 12px; }
+            .controls { gap: 6px; }
+            button { padding: 8px 10px; font-size: 0.75rem; flex: 1 1 auto; justify-content: center; }
         }
     </style>
 </head>
@@ -291,7 +319,7 @@
 
 <header>
     <div class="brand">
-        <h1>Sistema de Análisis Cinemático</h1>
+        <h1>Análisis Cinemático</h1>
     </div>
     <div class="controls">
         <button onclick="connectUSB()" class="primary">
@@ -307,26 +335,36 @@
         <button id="btn-stop" onclick="stopRecording()" disabled>
             <span>⏹️</span> Stop
         </button>
+        <!-- Botón exclusivo para mostrar la consola en móvil -->
+        <button onclick="toggleConsole()" class="mobile-only" style="background: var(--console-bg); color: white; border: none;">
+            <span>📜</span> Consola
+        </button>
     </div>
 </header>
 
 <main>
     <aside>
-        <div class="metric-card">
-            <div class="metric-label">Frecuencia Dominante</div>
-            <div id="m-hz" class="metric-value">0.00 Hz</div>
-        </div>
-        <div class="metric-card">
-            <div class="metric-label">Intensidad Señal</div>
-            <div id="m-pwr" class="metric-value">0.00</div>
-        </div>
-        <div class="metric-card">
-            <div class="metric-label">Vector Principal</div>
-            <div id="m-axis" class="metric-value" style="font-size: 1rem;">N/A</div>
+        <div class="metrics-container">
+            <div class="metric-card">
+                <div class="metric-label">Freq. Dominante</div>
+                <div id="m-hz" class="metric-value">0.00 Hz</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Intensidad</div>
+                <div id="m-pwr" class="metric-value">0.00</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Vector PCA</div>
+                <div id="m-axis" class="metric-value" style="font-size: 0.9rem;">[0.0, 0.0, 0.0]</div>
+            </div>
         </div>
 
+        <!-- La consola se comporta normal en PC y como modal overlay en móvil -->
         <div id="console-container">
-            <div class="console-header">Registro de Eventos</div>
+            <div class="console-header">
+                <span>Registro de Eventos</span>
+                <button class="mobile-only close-console-btn" onclick="toggleConsole()">✖</button>
+            </div>
             <div id="console"></div>
         </div>
     </aside>
@@ -352,22 +390,26 @@
     const isDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
     const textCol = isDarkMode ? '#f1f5f9' : '#0f172a';
 
-    // --- Motor de Registro ---
+    // --- Motor de Registro y UI ---
     function log(message, type = 'info') {
         const consoleEl = document.getElementById('console');
         const entry = document.createElement('div');
         entry.className = 'log-entry';
         const now = new Date().toLocaleTimeString([], { hour12: false, fractionDigits: 2 });
-        entry.innerHTML = `<span class="log-time">${now}</span> <span class="log-${type}">${message}</span>`;
+        entry.innerHTML = `<span class="log-time">[${now}]</span> <span class="log-${type}">${message}</span>`;
         consoleEl.appendChild(entry);
         consoleEl.scrollTop = consoleEl.scrollHeight;
     }
 
-    // --- Configuración de Gráficos ---
+    function toggleConsole() {
+        document.getElementById('console-container').classList.toggle('show');
+    }
+
+    // --- Configuración de Gráficos (CORREGIDO PARA HIGHCHARTS) ---
     const createChartConfig = (title, seriesData) => ({
         chart: { backgroundColor: 'transparent', animation: false, style: { fontFamily: 'inherit' } },
         title: { text: title, align: 'left', style: { color: textCol, fontSize: '13px', fontWeight: 'bold' } },
-        xAxis: { type: 'datetime', labels: { enabled: false }, gridLineWidth: 0, lineWidth: 0 },
+        xAxis: { type: 'datetime', labels: { enabled: false }, gridLineWidth: 0, lineWidth: 0, tickWidth: 0 },
         yAxis: { title: { text: null }, gridLineColor: isDarkMode ? '#334155' : '#f1f5f9', labels: { style: { color: '#64748b' } } },
         legend: { enabled: true, itemStyle: { color: '#94a3b8', fontSize: '10px' } },
         credits: { enabled: false },
@@ -375,26 +417,22 @@
         plotOptions: { series: { marker: { enabled: false }, lineWidth: 1.5, states: { hover: { enabled: false } } } }
     });
 
+    // Pasamos el ID del contenedor como primer argumento de Highcharts.chart
     const charts = {
-        acc: new Highcharts.Chart(createChartConfig('Acelerómetro (G)', [
+        acc: Highcharts.chart('c-acc', createChartConfig('Acelerómetro (G)', [
             { name: 'X', color: '#ef4444', data: [] }, { name: 'Y', color: '#22c55e', data: [] }, { name: 'Z', color: '#3b82f6', data: [] }
         ])),
-        gyro: new Highcharts.Chart(createChartConfig('Giroscopio (°/s)', [
+        gyro: Highcharts.chart('c-gyro', createChartConfig('Giroscopio (°/s)', [
             { name: 'X', color: '#f59e0b', data: [] }, { name: 'Y', color: '#8b5cf6', data: [] }, { name: 'Z', color: '#06b6d4', data: [] }
         ])),
-        pca: new Highcharts.Chart(createChartConfig('Componente Principal (PCA)', [
+        pca: Highcharts.chart('c-pca', createChartConfig('Componente Principal (PCA)', [
             { name: 'Señal Proyectada', color: '#3b82f6', data: [], type: 'spline' }
         ])),
-        fft: new Highcharts.Chart({
+        fft: Highcharts.chart('c-fft', {
             ...createChartConfig('Análisis de Frecuencia (FFT)', [{ name: 'Densidad Espectral', color: '#16a34a', data: [], type: 'area' }]),
             xAxis: { labels: { style: { color: '#64748b' } }, title: { text: 'Hz', style: { color: '#64748b' } } }
         })
     };
-
-    charts.acc.renderTo = 'c-acc';
-    charts.gyro.renderTo = 'c-gyro';
-    charts.pca.renderTo = 'c-pca';
-    charts.fft.renderTo = 'c-fft';
 
     // --- Procesamiento de Señal ---
     function processIncoming(line) {
@@ -476,7 +514,7 @@
         log("Archivo CSV generado y descargado.", "success");
     }
 
-    // --- Loop de Análisis ---
+    // --- Loop de Análisis PCA y FFT ---
     setInterval(() => {
         if (rawData.ax.length < 32) return;
         const n = rawData.ax.length;
