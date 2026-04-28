@@ -520,21 +520,14 @@
             log("Solicitando puerto serie USB...", "info");
             const port = await navigator.serial.requestPort();
             
-            console.log("[DEBUG USB] Puerto seleccionado por el usuario. Abriendo a 115200...");
+            console.log("[DEBUG USB] Puerto seleccionado. Abriendo a 115200...");
             await port.open({ baudRate: 115200 });
 
-            // SOLUCIÓN DEFINITIVA PARA ESP32-C3 NATIVE USB
-            try { 
-                // SOLO levantamos DTR (Data Terminal Ready).
-                // NO tocamos RTS para evitar reiniciar la placa, ya que al reiniciarse
-                // el ESP32-C3 apaga y enciende su hardware USB, rompiendo la conexión con Chrome.
-                await port.setSignals({ dataTerminalReady: true, requestToSend: false }); 
-                console.log("[DEBUG USB] DTR activado. No se forzó reinicio.");
-                log("Puerto conectado en modo streaming.", "success");
-            } catch (e) {
-                console.warn("[DEBUG USB] Fallo al establecer señales DTR/RTS:", e);
-                log("Aviso: Señales DTR ignoradas por el SO.", "warning");
-            }
+            // ¡ELIMINADO setSignals POR COMPLETO!
+            // Forzar DTR o RTS en el ESP32-C3 provoca un reinicio de su hardware USB interno,
+            // lo que hace que Chrome pierda la conexión inmediatamente ("Device has been lost").
+            
+            log("Puerto abierto en modo de escucha pasiva.", "success");
             
             dataStarted = false;
             timeOffset = null; 
@@ -562,7 +555,11 @@
             }
         } catch (err) { 
             console.error("[DEBUG USB] Error capturado:", err);
-            log("Error USB: " + err.message, "error"); 
+            if (err.message.includes("lost")) {
+                log("Error USB: Desconexión física. Si reseteas la placa, hazlo ANTES de conectar.", "error");
+            } else {
+                log("Error USB: " + err.message, "error"); 
+            }
         }
     }
 
