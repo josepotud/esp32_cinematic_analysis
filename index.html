@@ -310,14 +310,21 @@
         
         if (!firstLineLog) {
             log("Recibido primer registro: " + line, "info");
+            console.log("[DEBUG USB] PRIMERA LÍNEA RECIBIDA EN CRUDO:", line);
             firstLineLog = true;
         }
 
         const parts = line.split(',');
+        
+        // LOG EXHAUSTIVO: Imprimir en la consola (F12) lo que se intenta procesar.
+        console.log(`[DEBUG USB] Parseando línea: "${line}" -> Fragmentos encontrados: ${parts.length}`);
+
         if (parts.length === 7) {
             processPhysData(parseInt(parts[0]), parseInt(parts[1])/ACCEL_SCALE, parseInt(parts[2])/ACCEL_SCALE, parseInt(parts[3])/ACCEL_SCALE, parseInt(parts[4])*GYRO_SCALE, parseInt(parts[5])*GYRO_SCALE, parseInt(parts[6])*GYRO_SCALE);
         } else if (parts.length === 6) {
             processPhysData(Date.now(), parseInt(parts[0])/ACCEL_SCALE, parseInt(parts[1])/ACCEL_SCALE, parseInt(parts[2])/ACCEL_SCALE, parseInt(parts[3])*GYRO_SCALE, parseInt(parts[4])*GYRO_SCALE, parseInt(parts[5])*GYRO_SCALE);
+        } else {
+            console.warn(`[DEBUG USB] La línea no tiene 6 ni 7 partes. Es probable que sea un mensaje del sistema ESP32 y no datos CSV.`);
         }
     }
 
@@ -508,16 +515,21 @@
     // --- Conectividad ---
     async function connectUSB() {
         try {
+            console.log("[DEBUG USB] --- Iniciando solicitud de conexión USB ---");
             log("Solicitando puerto serie USB...", "info");
             const port = await navigator.serial.requestPort();
+            
+            console.log("[DEBUG USB] Puerto seleccionado por el usuario. Abriendo a 115200...");
             await port.open({ baudRate: 115200 });
 
             // Truco DTR/RTS con pequeña pausa para estabilizar chips ESP32-C3 en Windows
             await new Promise(r => setTimeout(r, 250));
             try { 
                 await port.setSignals({ dataTerminalReady: true, requestToSend: true });
+                console.log("[DEBUG USB] Señales DTR/RTS configuradas a true.");
                 log("Señales DTR activadas correctamente.", "success");
             } catch (e) {
+                console.warn("[DEBUG USB] Fallo al establecer señales DTR/RTS:", e);
                 log("Aviso: Señales DTR ignoradas por el SO.", "warning");
             }
             
@@ -530,16 +542,25 @@
             const reader = decoder.readable.getReader();
             let buf = "";
             
+            console.log("[DEBUG USB] Bucle de lectura iniciado. Esperando chunks...");
+
             while (true) {
                 const { value, done } = await reader.read();
-                if (done) break;
+                if (done) {
+                    console.log("[DEBUG USB] El stream de lectura se ha cerrado.");
+                    break;
+                }
+                
                 buf += value;
                 
                 const lines = buf.split(/\r?\n/);
-                buf = lines.pop(); 
+                buf = lines.pop(); // Mantener el último fragmento que no tiene salto de línea
                 for (let i=0; i<lines.length; i++) processUSBString(lines[i]);
             }
-        } catch (err) { log("Error USB: " + err.message, "error"); }
+        } catch (err) { 
+            console.error("[DEBUG USB] Error capturado:", err);
+            log("Error USB: " + err.message, "error"); 
+        }
     }
 
     async function connectBLE() {
