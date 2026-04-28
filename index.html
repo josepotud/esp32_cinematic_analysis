@@ -219,6 +219,7 @@
     let isRecording = false;
     let dataStarted = false;
     let timeOffset = null; 
+    let firstLineLog = false;
 
     const ACCEL_SCALE = 16384.0;
     const GYRO_SCALE = 2000.0 / 32768.0;
@@ -311,16 +312,17 @@
         // Limpiar el caracter \r por si viene desde Windows
         line = line.replace('\r', '');
 
-        console.log(`[USB LÍNEA PARSEADA] -> "${line}"`);
-
         const parts = line.split(',');
         
         if (parts.length === 7) {
+            if (!firstLineLog) { log("Recibido primer registro válido.", "info"); firstLineLog = true; }
             processPhysData(parseInt(parts[0]), parseInt(parts[1])/ACCEL_SCALE, parseInt(parts[2])/ACCEL_SCALE, parseInt(parts[3])/ACCEL_SCALE, parseInt(parts[4])*GYRO_SCALE, parseInt(parts[5])*GYRO_SCALE, parseInt(parts[6])*GYRO_SCALE);
         } else if (parts.length === 6) {
+            if (!firstLineLog) { log("Recibido primer registro válido.", "info"); firstLineLog = true; }
             processPhysData(Date.now(), parseInt(parts[0])/ACCEL_SCALE, parseInt(parts[1])/ACCEL_SCALE, parseInt(parts[2])/ACCEL_SCALE, parseInt(parts[3])*GYRO_SCALE, parseInt(parts[4])*GYRO_SCALE, parseInt(parts[5])*GYRO_SCALE);
         } else {
-            console.warn(`[USB IGNORADO] Formato incorrecto. Partes: ${parts.length}`);
+            // Ignoramos silenciosamente la basura del bootloader o líneas cortadas
+            if (!dataStarted) console.warn(`[USB IGNORADO] Mensaje ROM o línea rota: ${line}`);
         }
     }
 
@@ -518,18 +520,15 @@
             console.log("[DEBUG USB] Puerto abierto a 115200");
             await port.open({ baudRate: 115200 });
 
-            // Es fundamental activar el DTR sin reiniciar para habilitar la transmisión en los puertos nativos
-            try { 
-                await port.setSignals({ dataTerminalReady: true, requestToSend: false }); 
-                console.log("[DEBUG USB] DTR activado.");
-            } catch (e) {
-                console.warn("[DEBUG USB] DTR no soportado por SO:", e);
-            }
+            // ⚠️ ELIMINADO COMPLETAMENTE port.setSignals() ⚠️
+            // El ESP32-C3 entra en Download Mode si jugamos con DTR/RTS.
+            // Simplemente abrimos el puerto y escuchamos.
             
-            log("Puerto abierto. Esperando datos...", "success");
+            log("Puerto abierto en modo pasivo. Escuchando...", "success");
             
             dataStarted = false;
             timeOffset = null; 
+            firstLineLog = false;
 
             const decoder = new TextDecoderStream();
             port.readable.pipeTo(decoder.writable);
@@ -541,9 +540,6 @@
             while (true) {
                 const { value, done } = await reader.read();
                 if (done) break;
-                
-                // IMPRIMIR CADA FRAGMENTO CRUDO QUE LLEGA DESDE EL CABLE
-                console.log("[USB FRAGMENTO CRUDO RECIBIDO]:", value);
                 
                 buf += value;
                 const lines = buf.split(/\r?\n/);
@@ -577,10 +573,17 @@
             await tx.startNotifications();
             dataStarted = false;
             timeOffset = null; 
+            firstLineLog = false;
             log("BLE suscrito. Recibiendo datos...", "success");
 
             tx.addEventListener('characteristicvaluechanged', (e) => {
                 const view = e.target.value; 
+                
+                if (!firstLineLog) {
+                    log("Recibido primer paquete binario BLE (" + view.byteLength + " bytes)", "info");
+                    firstLineLog = true;
+                }
+
                 if(view.byteLength === 16) {
                     processPhysData(view.getUint32(0, true), view.getInt16(4, true)/ACCEL_SCALE, view.getInt16(6, true)/ACCEL_SCALE, view.getInt16(8, true)/ACCEL_SCALE, view.getInt16(10, true)*GYRO_SCALE, view.getInt16(12, true)*GYRO_SCALE, view.getInt16(14, true)*GYRO_SCALE);
                 } else if (view.byteLength === 12) {
