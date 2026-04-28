@@ -170,7 +170,7 @@
                 </div>
                 <div class="setting-item">
                     <label>High-Pass (Hz)</label>
-                    <input type="number" id="cfg-hp" value="0" step="0.1" min="0">
+                    <input type="number" id="cfg-hp" value="0.5" step="0.1" min="0">
                 </div>
                 <div class="setting-item">
                     <label>Low-Pass (Hz)</label>
@@ -219,6 +219,7 @@
     let isRecording = false;
     let dataStarted = false;
     let timeOffset = null; 
+    let firstLineLog = false; // Bandera para imprimir el primer dato y depurar
 
     const ACCEL_SCALE = 16384.0;
     const GYRO_SCALE = 2000.0 / 32768.0;
@@ -244,6 +245,7 @@
 
     function toggleConsole() { document.getElementById('console-container').classList.toggle('show'); }
 
+    // CORRECCIÓN CSP: Se desactiva el tooltip y el tracking para evitar que Highcharts utilice eval() o new Function()
     const createChartConfig = (title, seriesData) => ({
         chart: { backgroundColor: 'transparent', animation: false, style: { fontFamily: 'inherit' } },
         title: { text: title, align: 'left', style: { color: textCol, fontSize: '13px', fontWeight: 'bold' } },
@@ -251,8 +253,16 @@
         yAxis: { title: { text: null }, gridLineColor: isDarkMode ? '#334155' : '#f1f5f9', labels: { style: { color: '#64748b' } } },
         legend: { enabled: true, itemStyle: { color: '#94a3b8', fontSize: '10px' } },
         credits: { enabled: false },
+        tooltip: { enabled: false }, 
         series: seriesData,
-        plotOptions: { series: { marker: { enabled: false }, lineWidth: 1.5, states: { hover: { enabled: false } } } }
+        plotOptions: { 
+            series: { 
+                marker: { enabled: false }, 
+                lineWidth: 1.5, 
+                states: { hover: { enabled: false } },
+                enableMouseTracking: false 
+            } 
+        }
     });
 
     const charts = {
@@ -297,6 +307,12 @@
     function processUSBString(line) {
         line = line.trim();
         if (!line) return;
+        
+        if (!firstLineLog) {
+            log("Recibido primer registro: " + line, "info");
+            firstLineLog = true;
+        }
+
         const parts = line.split(',');
         if (parts.length === 7) {
             processPhysData(parseInt(parts[0]), parseInt(parts[1])/ACCEL_SCALE, parseInt(parts[2])/ACCEL_SCALE, parseInt(parts[3])/ACCEL_SCALE, parseInt(parts[4])*GYRO_SCALE, parseInt(parts[5])*GYRO_SCALE, parseInt(parts[6])*GYRO_SCALE);
@@ -391,7 +407,6 @@
         const t_slice = rawData.t.slice(-pointsToAnalyze);
         let channels = [];
         
-        // Factor de escala para igualar varianzas (1G ~= 100 dps de forma aproximada)
         const gyroScale = 100.0; 
 
         if (sensorSource === 'acc') {
@@ -407,15 +422,13 @@
             );
         }
 
-        // Aplicar Filtros a todos los canales
         channels = channels.map(ch => applyIIRFilter(applyIIRFilter(applyMovingAverage(ch, smoothWin), lpFreq, 'low', dt), hpFreq, 'high', dt));
 
         let signalToAnalyze = [];
         const n = pointsToAnalyze;
-        const dims = channels.length; // 3 o 6 dimensiones
+        const dims = channels.length; 
 
         if (mode === 'pca') {
-            // PCA Generalizada (3D o 6D)
             const centered = [];
             for (let i = 0; i < n; i++) {
                 let row = [];
@@ -443,7 +456,6 @@
                 `[${ev[0].toFixed(2)}, ${ev[1].toFixed(2)}, ${ev[2].toFixed(2)}]` : `Vector 6D Fusionado`;
 
         } else if (mode === 'mag') {
-            // Magnitud Multidimensional (Teorema de Pitágoras en N dimensiones)
             let mag_raw = [];
             for(let i=0; i<n; i++) {
                 let sumSq = 0;
@@ -500,18 +512,18 @@
             const port = await navigator.serial.requestPort();
             await port.open({ baudRate: 115200 });
 
-            // Truco de reinicio duro DTR/RTS para destrabar ESP32-C3
+            // Truco DTR/RTS con pequeña pausa para estabilizar chips ESP32-C3 en Windows
+            await new Promise(r => setTimeout(r, 250));
             try { 
-                await port.setSignals({ dataTerminalReady: false, requestToSend: false });
-                await new Promise(r => setTimeout(r, 100)); // Breve pausa
                 await port.setSignals({ dataTerminalReady: true, requestToSend: true });
-                log("Señales DTR forzadas (Reset de canal ok).", "success");
+                log("Señales DTR activadas correctamente.", "success");
             } catch (e) {
                 log("Aviso: Señales DTR ignoradas por el SO.", "warning");
             }
             
             dataStarted = false;
             timeOffset = null; 
+            firstLineLog = false;
 
             const decoder = new TextDecoderStream();
             port.readable.pipeTo(decoder.writable);
@@ -548,10 +560,17 @@
             await tx.startNotifications();
             dataStarted = false;
             timeOffset = null; 
+            firstLineLog = false;
             log("BLE suscrito. Recibiendo datos...", "success");
 
             tx.addEventListener('characteristicvaluechanged', (e) => {
                 const view = e.target.value; 
+                
+                if (!firstLineLog) {
+                    log("Recibido primer paquete binario BLE (" + view.byteLength + " bytes)", "info");
+                    firstLineLog = true;
+                }
+
                 if(view.byteLength === 16) {
                     processPhysData(view.getUint32(0, true), view.getInt16(4, true)/ACCEL_SCALE, view.getInt16(6, true)/ACCEL_SCALE, view.getInt16(8, true)/ACCEL_SCALE, view.getInt16(10, true)*GYRO_SCALE, view.getInt16(12, true)*GYRO_SCALE, view.getInt16(14, true)*GYRO_SCALE);
                 } else if (view.byteLength === 12) {
