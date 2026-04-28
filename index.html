@@ -34,8 +34,10 @@
 
         .desktop-only { display: block; } .mobile-only { display: none !important; }
 
+
         main { display: grid; grid-template-columns: 320px 1fr; grid-template-rows: auto 1fr; flex: 1; overflow: hidden; }
         aside { grid-row: 1 / 3; background: var(--bg-secondary); border-right: 1px solid var(--border); display: flex; flex-direction: column; padding: 16px; gap: 16px; overflow-y: auto; }
+
 
         .metrics-container { display: flex; flex-direction: column; gap: 16px; }
         .metric-card { background: var(--card-bg); padding: 16px; border-radius: 10px; border: 1px solid var(--border); }
@@ -219,7 +221,6 @@
     let isRecording = false;
     let dataStarted = false;
     let timeOffset = null; 
-    let firstLineLog = false;
 
     const ACCEL_SCALE = 16384.0;
     const GYRO_SCALE = 2000.0 / 32768.0;
@@ -277,6 +278,7 @@
             dataStarted = true; 
             timeOffset = Date.now() - t_esp; 
             log("Flujo de datos iniciado.", "success"); 
+            console.log("[DEBUG] Primer dato procesado y graficado exitosamente.");
         }
         if (timeOffset === null) timeOffset = Date.now() - t_esp;
 
@@ -311,40 +313,16 @@
         // Limpiar el caracter \r por si viene desde Windows
         line = line.replace('\r', '');
 
-        // IMPRIMIR TODO LO QUE LLEGA EN LA CONSOLA (F12) PARA DEPURACIÓN
-        console.log("[USB RAW] " + line);
+        console.log(`[USB LÍNEA PARSEADA] -> "${line}"`);
 
-        // RETROCOMPATIBILIDAD CON FIRMWARE ANTIGUO (JSON)
-        if (line.startsWith('{')) {
-            try {
-                const d = JSON.parse(line);
-                if (!firstLineLog) { log("Detectado firmware antiguo (JSON).", "info"); firstLineLog = true; }
-                
-                // Mapeamos los datos con precaución por si falta el giroscopio en el código viejo
-                const ax = d.ax !== undefined ? d.ax : 0;
-                const ay = d.ay !== undefined ? d.ay : 0;
-                const az = d.az !== undefined ? d.az : 0;
-                const gx = d.gx !== undefined ? d.gx : 0;
-                const gy = d.gy !== undefined ? d.gy : 0;
-                const gz = d.gz !== undefined ? d.gz : 0;
-                
-                processPhysData(Date.now(), ax, ay, az, gx, gy, gz);
-            } catch (e) {
-                console.warn("[USB JSON ERROR]", e);
-            }
-        } 
-        // PARSEO DE FIRMWARE NUEVO (CSV)
-        else {
-            const parts = line.split(',');
-            if (parts.length === 7) {
-                if (!firstLineLog) { log("Detectado firmware nuevo (CSV).", "info"); firstLineLog = true; }
-                processPhysData(parseInt(parts[0]), parseInt(parts[1])/ACCEL_SCALE, parseInt(parts[2])/ACCEL_SCALE, parseInt(parts[3])/ACCEL_SCALE, parseInt(parts[4])*GYRO_SCALE, parseInt(parts[5])*GYRO_SCALE, parseInt(parts[6])*GYRO_SCALE);
-            } else if (parts.length === 6) {
-                if (!firstLineLog) { log("Detectado firmware nuevo (CSV sin Timestamp).", "info"); firstLineLog = true; }
-                processPhysData(Date.now(), parseInt(parts[0])/ACCEL_SCALE, parseInt(parts[1])/ACCEL_SCALE, parseInt(parts[2])/ACCEL_SCALE, parseInt(parts[3])*GYRO_SCALE, parseInt(parts[4])*GYRO_SCALE, parseInt(parts[5])*GYRO_SCALE);
-            } else {
-                if (!dataStarted) console.warn(`[USB IGNORADO] Mensaje de sistema o corrupto: ${line}`);
-            }
+        const parts = line.split(',');
+        
+        if (parts.length === 7) {
+            processPhysData(parseInt(parts[0]), parseInt(parts[1])/ACCEL_SCALE, parseInt(parts[2])/ACCEL_SCALE, parseInt(parts[3])/ACCEL_SCALE, parseInt(parts[4])*GYRO_SCALE, parseInt(parts[5])*GYRO_SCALE, parseInt(parts[6])*GYRO_SCALE);
+        } else if (parts.length === 6) {
+            processPhysData(Date.now(), parseInt(parts[0])/ACCEL_SCALE, parseInt(parts[1])/ACCEL_SCALE, parseInt(parts[2])/ACCEL_SCALE, parseInt(parts[3])*GYRO_SCALE, parseInt(parts[4])*GYRO_SCALE, parseInt(parts[5])*GYRO_SCALE);
+        } else {
+            console.warn(`[USB IGNORADO] Formato incorrecto. Partes: ${parts.length}`);
         }
     }
 
@@ -542,23 +520,18 @@
             console.log("[DEBUG USB] Puerto abierto a 115200");
             await port.open({ baudRate: 115200 });
 
-            // Secuencia EXACTA de reinicio para evitar el Modo Descarga en ESP32-C3 Native USB
-            try {
-                // 1. Poner EN a LOW (Reset) y BOOT a HIGH (Modo normal)
-                await port.setSignals({ dataTerminalReady: false, requestToSend: true });
-                await new Promise(r => setTimeout(r, 100));
-                
-                // 2. Soltar EN (dejándolo HIGH para que arranque)
-                await port.setSignals({ dataTerminalReady: false, requestToSend: false });
-                console.log("[DEBUG USB] Secuencia DTR/RTS de arranque normal enviada.");
-                log("Reiniciando placa...", "warning");
+            // Es fundamental activar el DTR sin reiniciar para habilitar la transmisión en los puertos nativos
+            try { 
+                await port.setSignals({ dataTerminalReady: true, requestToSend: false }); 
+                console.log("[DEBUG USB] DTR activado.");
             } catch (e) {
-                console.warn("[DEBUG USB] El sistema operativo no permite cambiar las señales DTR/RTS.", e);
+                console.warn("[DEBUG USB] DTR no soportado por SO:", e);
             }
+            
+            log("Puerto abierto. Esperando datos...", "success");
             
             dataStarted = false;
             timeOffset = null; 
-            firstLineLog = false;
 
             const decoder = new TextDecoderStream();
             port.readable.pipeTo(decoder.writable);
@@ -570,6 +543,9 @@
             while (true) {
                 const { value, done } = await reader.read();
                 if (done) break;
+                
+                // IMPRIMIR CADA FRAGMENTO CRUDO QUE LLEGA DESDE EL CABLE
+                console.log("[USB FRAGMENTO CRUDO RECIBIDO]:", value);
                 
                 buf += value;
                 const lines = buf.split(/\r?\n/);
@@ -603,17 +579,10 @@
             await tx.startNotifications();
             dataStarted = false;
             timeOffset = null; 
-            firstLineLog = false;
             log("BLE suscrito. Recibiendo datos...", "success");
 
             tx.addEventListener('characteristicvaluechanged', (e) => {
                 const view = e.target.value; 
-                
-                if (!firstLineLog) {
-                    log("Recibido primer paquete binario BLE (" + view.byteLength + " bytes)", "info");
-                    firstLineLog = true;
-                }
-
                 if(view.byteLength === 16) {
                     processPhysData(view.getUint32(0, true), view.getInt16(4, true)/ACCEL_SCALE, view.getInt16(6, true)/ACCEL_SCALE, view.getInt16(8, true)/ACCEL_SCALE, view.getInt16(10, true)*GYRO_SCALE, view.getInt16(12, true)*GYRO_SCALE, view.getInt16(14, true)*GYRO_SCALE);
                 } else if (view.byteLength === 12) {
