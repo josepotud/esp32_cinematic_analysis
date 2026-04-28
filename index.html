@@ -31,7 +31,6 @@
         button.primary { background: var(--accent); color: white; border: none; }
         button.record { background: var(--danger); color: white; border: none; }
         button.record.active { animation: pulse 1.5s infinite; }
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
 
         .desktop-only { display: block; } .mobile-only { display: none !important; }
 
@@ -43,10 +42,13 @@
         .metric-label { font-size: 0.7rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; margin-bottom: 4px; }
         .metric-value { font-size: 1.5rem; font-weight: 700; color: var(--accent); }
 
-        .settings-panel { background: var(--card-bg); padding: 16px; border-radius: 10px; border: 1px solid var(--border); display: flex; flex-direction: column; gap: 12px; }
-        .settings-header { font-size: 0.75rem; font-weight: 800; color: var(--text-main); text-transform: uppercase; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+        /* Estilos del Panel DSP */
+        .settings-panel { background: var(--card-bg); padding: 16px; border-radius: 10px; border: 1px solid var(--border); display: flex; flex-direction: column; gap: 0; }
+        .settings-header { font-size: 0.8rem; font-weight: 800; color: var(--text-main); text-transform: uppercase; display: flex; justify-content: space-between; align-items: center; }
+        .settings-content { display: flex; flex-direction: column; gap: 12px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); }
         .setting-item { display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; color: var(--text-muted); font-weight: 600; }
         .setting-item input, .setting-item select { width: 75px; padding: 4px; background: var(--bg-secondary); border: 1px solid var(--border); color: var(--text-main); border-radius: 4px; font-family: inherit; text-align: right; outline: none; }
+        .toggle-icon { display: none; }
 
         #console-container { flex: 1; display: flex; flex-direction: column; background: var(--console-bg); border-radius: 8px; overflow: hidden; min-height: 200px; }
         .console-header { padding: 10px 12px; background: #0f172a; color: #94a3b8; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; display: flex; justify-content: space-between; align-items: center; }
@@ -64,6 +66,7 @@
         .chart-wrapper { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 12px; position: relative; min-height: 250px; }
         .full-width { grid-column: span 2; }
 
+        /* --- Modo Móvil --- */
         @media (max-width: 900px) {
             header { justify-content: center; text-align: center; }
             .brand { width: 100%; margin-bottom: 4px; }
@@ -78,9 +81,23 @@
             .metrics-container { flex-direction: row; flex-wrap: nowrap; overflow-x: auto; gap: 8px; padding-bottom: 4px; }
             .metric-card { flex: 1; min-width: 110px; padding: 10px; text-align: center; }
             .metric-value { font-size: 1.2rem; }
+            
+            /* Lógica de plegado de ajustes en móvil */
+            .settings-header { cursor: pointer; padding: 8px 0; }
+            .toggle-icon { display: inline-block; transition: transform 0.3s; font-size: 0.7rem; }
+            .settings-content { display: none; }
+            .settings-panel.open .settings-content { display: flex; }
+            .settings-panel.open .toggle-icon { transform: rotate(180deg); }
+
             #console-container { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; border-radius: 0; z-index: 1000; transform: translateY(100%); transition: transform 0.3s ease-in-out; }
             #console-container.show { transform: translateY(0); }
-            .dashboard-content { grid-template-columns: 1fr; padding: 12px; }
+            
+            /* Reordenación de gráficos en móvil */
+            .dashboard-content { display: flex; flex-direction: column; padding: 12px; }
+            #c-pca { order: 1; }
+            #c-fft { order: 2; }
+            #c-acc { order: 3; }
+            #c-gyro { order: 4; }
             .full-width { grid-column: auto; }
         }
         @media (max-width: 480px) { header { padding: 12px; } .controls { gap: 6px; } button { padding: 8px 10px; font-size: 0.75rem; flex: 1 1 auto; justify-content: center; } }
@@ -119,50 +136,62 @@
             </div>
         </div>
 
-        <div class="settings-panel">
-            <div class="settings-header">Filtros DSP</div>
-            <div class="setting-item" title="Modo de análisis">
-                <label>Señal Base</label>
-                <select id="cfg-mode">
-                    <option value="pca" selected>PCA</option>
-                    <option value="mag">Magnitud</option>
-                </select>
+        <div class="settings-panel" id="mobile-settings">
+            <div class="settings-header" onclick="document.getElementById('mobile-settings').classList.toggle('open')">
+                ⚙️ Filtros DSP <span class="toggle-icon">▼</span>
             </div>
-            <div class="setting-item" title="Intervalo de actualización">
-                <label>Refresco (s)</label>
-                <input type="number" id="cfg-refresh" value="0.05" step="0.01" min="0.01">
-            </div>
-            <div class="setting-item" title="Ventana de tiempo para analizar">
-                <label>Ventana (s)</label>
-                <input type="number" id="cfg-window" value="5" step="1" min="1">
-            </div>
-            <div class="setting-item" title="Ventana de Media Móvil">
-                <label>Suavizado (N)</label>
-                <input type="number" id="cfg-smooth" value="3" min="1" max="50">
-            </div>
-            <div class="setting-item" title="Filtro Pasa Altos (Elimina Gravedad)">
-                <label>High-Pass (Hz)</label>
-                <input type="number" id="cfg-hp" value="2" step="0.1" min="0">
-            </div>
-            <div class="setting-item" title="Filtro Pasa Bajos">
-                <label>Low-Pass (Hz)</label>
-                <input type="number" id="cfg-lp" value="12" step="1" min="0">
-            </div>
-            <div class="setting-item" title="Ponderación espectral">
-                <label>Ponderación</label>
-                <select id="cfg-fft-weight">
-                    <option value="0">Raw</option>
-                    <option value="1" selected>Veloc.</option>
-                    <option value="2">Despl.</option>
-                </select>
-            </div>
-            <div class="setting-item">
-                <label>FFT Mín (Hz)</label>
-                <input type="number" id="cfg-fft-min" value="2" step="0.1" min="0">
-            </div>
-            <div class="setting-item">
-                <label>FFT Máx (Hz)</label>
-                <input type="number" id="cfg-fft-max" value="12" step="1" min="1">
+            <div class="settings-content">
+                <div class="setting-item" title="Fuente del sensor">
+                    <label>Sensor</label>
+                    <select id="cfg-sensor">
+                        <option value="acc" selected>Acelerómetro</option>
+                        <option value="gyro">Giroscopio</option>
+                        <option value="both">Ambos (Fusión)</option>
+                    </select>
+                </div>
+                <div class="setting-item" title="Modo de análisis">
+                    <label>Modo</label>
+                    <select id="cfg-mode">
+                        <option value="pca" selected>PCA</option>
+                        <option value="mag">Magnitud</option>
+                    </select>
+                </div>
+                <div class="setting-item">
+                    <label>Refresco (s)</label>
+                    <input type="number" id="cfg-refresh" value="0.05" step="0.01" min="0.01">
+                </div>
+                <div class="setting-item">
+                    <label>Ventana (s)</label>
+                    <input type="number" id="cfg-window" value="5" step="1" min="1">
+                </div>
+                <div class="setting-item">
+                    <label>Suavizado (N)</label>
+                    <input type="number" id="cfg-smooth" value="3" min="1" max="50">
+                </div>
+                <div class="setting-item">
+                    <label>High-Pass (Hz)</label>
+                    <input type="number" id="cfg-hp" value="0" step="0.1" min="0">
+                </div>
+                <div class="setting-item">
+                    <label>Low-Pass (Hz)</label>
+                    <input type="number" id="cfg-lp" value="12" step="1" min="0">
+                </div>
+                <div class="setting-item">
+                    <label>Ponderación</label>
+                    <select id="cfg-fft-weight">
+                        <option value="0">Raw</option>
+                        <option value="1" selected>Veloc.</option>
+                        <option value="2">Despl.</option>
+                    </select>
+                </div>
+                <div class="setting-item">
+                    <label>FFT Mín (Hz)</label>
+                    <input type="number" id="cfg-fft-min" value="0" step="0.1" min="0">
+                </div>
+                <div class="setting-item">
+                    <label>FFT Máx (Hz)</label>
+                    <input type="number" id="cfg-fft-max" value="12" step="1" min="1">
+                </div>
             </div>
         </div>
 
@@ -176,10 +205,10 @@
     </aside>
 
     <div class="dashboard-content">
-        <div class="chart-wrapper" id="c-acc"></div>
-        <div class="chart-wrapper" id="c-gyro"></div>
         <div class="chart-wrapper full-width" id="c-pca"></div>
         <div class="chart-wrapper full-width" id="c-fft"></div>
+        <div class="chart-wrapper" id="c-acc"></div>
+        <div class="chart-wrapper" id="c-gyro"></div>
     </div>
 </main>
 
@@ -190,7 +219,6 @@
     let isRecording = false;
     let dataStarted = false;
     let timeOffset = null; 
-    let activeBleDevice = null;
 
     const ACCEL_SCALE = 16384.0;
     const GYRO_SCALE = 2000.0 / 32768.0;
@@ -228,19 +256,18 @@
     });
 
     const charts = {
+        pca: Highcharts.chart('c-pca', createChartConfig('Señal Analizada (Fusión DSP)', [{ name: 'Amplitud', color: '#3b82f6', data: [], type: 'spline' }])),
+        fft: Highcharts.chart('c-fft', { ...createChartConfig('Análisis de Frecuencia (FFT)', [{ name: 'Densidad Espectral', color: '#16a34a', data: [], type: 'area' }]), xAxis: { labels: { style: { color: '#64748b' } }, title: { text: 'Hz', style: { color: '#64748b' } } } }),
         acc: Highcharts.chart('c-acc', createChartConfig('Acelerómetro (G)', [{ name: 'X', color: '#ef4444', data: [] }, { name: 'Y', color: '#22c55e', data: [] }, { name: 'Z', color: '#3b82f6', data: [] }])),
-        gyro: Highcharts.chart('c-gyro', createChartConfig('Giroscopio (°/s)', [{ name: 'X', color: '#f59e0b', data: [] }, { name: 'Y', color: '#8b5cf6', data: [] }, { name: 'Z', color: '#06b6d4', data: [] }])),
-        pca: Highcharts.chart('c-pca', createChartConfig('Señal Analizada', [{ name: 'Amplitud', color: '#3b82f6', data: [], type: 'spline' }])),
-        fft: Highcharts.chart('c-fft', { ...createChartConfig('Análisis de Frecuencia (FFT)', [{ name: 'Densidad Espectral', color: '#16a34a', data: [], type: 'area' }]), xAxis: { labels: { style: { color: '#64748b' } }, title: { text: 'Hz', style: { color: '#64748b' } } } })
+        gyro: Highcharts.chart('c-gyro', createChartConfig('Giroscopio (°/s)', [{ name: 'X', color: '#f59e0b', data: [] }, { name: 'Y', color: '#8b5cf6', data: [] }, { name: 'Z', color: '#06b6d4', data: [] }]))
     };
 
     function processPhysData(t_esp, ax, ay, az, gx, gy, gz) {
         if (!dataStarted) { 
             dataStarted = true; 
             timeOffset = Date.now() - t_esp; 
-            log("Flujo de datos iniciado. Reloj sincronizado con el microcontrolador.", "success"); 
+            log("Flujo de datos iniciado.", "success"); 
         }
-
         if (timeOffset === null) timeOffset = Date.now() - t_esp;
 
         const now = t_esp + timeOffset;
@@ -249,12 +276,9 @@
         rawData.gx.push(gx); rawData.gy.push(gy); rawData.gz.push(gz);
         rawData.t.push(now);
 
-        if (isRecording) {
-            recordedSession.push({ timestamp: new Date(now).toISOString(), ax, ay, az, gx, gy, gz });
-        }
+        if (isRecording) recordedSession.push({ timestamp: new Date(now).toISOString(), ax, ay, az, gx, gy, gz });
 
         const currentMaxPoints = getMaxDataPoints();
-        
         if (rawData.ax.length > currentMaxPoints) { 
             const overflow = rawData.ax.length - currentMaxPoints;
             Object.keys(rawData).forEach(k => rawData[k].splice(0, overflow)); 
@@ -274,25 +298,10 @@
         line = line.trim();
         if (!line) return;
         const parts = line.split(',');
-        
         if (parts.length === 7) {
-            const t_esp = parseInt(parts[0]);
-            const ax = parseInt(parts[1]) / ACCEL_SCALE;
-            const ay = parseInt(parts[2]) / ACCEL_SCALE;
-            const az = parseInt(parts[3]) / ACCEL_SCALE;
-            const gx = parseInt(parts[4]) * GYRO_SCALE;
-            const gy = parseInt(parts[5]) * GYRO_SCALE;
-            const gz = parseInt(parts[6]) * GYRO_SCALE;
-            processPhysData(t_esp, ax, ay, az, gx, gy, gz);
+            processPhysData(parseInt(parts[0]), parseInt(parts[1])/ACCEL_SCALE, parseInt(parts[2])/ACCEL_SCALE, parseInt(parts[3])/ACCEL_SCALE, parseInt(parts[4])*GYRO_SCALE, parseInt(parts[5])*GYRO_SCALE, parseInt(parts[6])*GYRO_SCALE);
         } else if (parts.length === 6) {
-            const t_esp = Date.now(); 
-            const ax = parseInt(parts[0]) / ACCEL_SCALE;
-            const ay = parseInt(parts[1]) / ACCEL_SCALE;
-            const az = parseInt(parts[2]) / ACCEL_SCALE;
-            const gx = parseInt(parts[3]) * GYRO_SCALE;
-            const gy = parseInt(parts[4]) * GYRO_SCALE;
-            const gz = parseInt(parts[5]) * GYRO_SCALE;
-            processPhysData(t_esp, ax, ay, az, gx, gy, gz);
+            processPhysData(Date.now(), parseInt(parts[0])/ACCEL_SCALE, parseInt(parts[1])/ACCEL_SCALE, parseInt(parts[2])/ACCEL_SCALE, parseInt(parts[3])*GYRO_SCALE, parseInt(parts[4])*GYRO_SCALE, parseInt(parts[5])*GYRO_SCALE);
         }
     }
 
@@ -309,23 +318,18 @@
         document.getElementById('btn-record').disabled = false;
         document.getElementById('btn-record').classList.remove('active');
         document.getElementById('btn-stop').disabled = true;
-        if (recordedSession.length === 0) { log("No hay datos grabados.", "error"); return; }
-        downloadCSV();
-    }
-
-    function downloadCSV() {
+        if (recordedSession.length === 0) return;
+        
         const headers = ["Timestamp", "Accel_X", "Accel_Y", "Accel_Z", "Gyro_X", "Gyro_Y", "Gyro_Z"];
         const rows = recordedSession.map(s => [s.timestamp, s.ax, s.ay, s.az, s.gx, s.gy, s.gz]);
         let csvContent = "data:text/csv;charset=utf-8," + headers.join(",") + "\n" + rows.map(e => e.join(",")).join("\n");
-        const encodedUri = encodeURI(csvContent);
         const link = document.createElement("a");
-        link.setAttribute("href", encodedUri);
+        link.setAttribute("href", encodeURI(csvContent));
         link.setAttribute("download", `captura_${Date.now()}.csv`);
         document.body.appendChild(link); link.click(); document.body.removeChild(link);
-        log("CSV generado y descargado.", "success");
+        log("CSV descargado.", "success");
     }
 
-    // --- Filtros DSP ---
     function applyMovingAverage(data, windowSize) {
         if (windowSize <= 1) return data;
         let res = [];
@@ -342,7 +346,6 @@
         if (!cutoff || cutoff <= 0 || cutoff >= 1/(2*dt)) return data;
         let rc = 1.0 / (cutoff * 2 * Math.PI);
         let res = [];
-        
         if (type === 'low') {
             res.push(data[0]); 
             let alpha = dt / (rc + dt);
@@ -357,7 +360,7 @@
 
     let lastAnalysisTime = 0;
 
-    // --- Loop de Análisis PCA y FFT ---
+    // --- Loop Principal DSP ---
     setInterval(() => {
         if (rawData.ax.length < 32) return;
         
@@ -368,6 +371,7 @@
 
         const n_total = rawData.ax.length;
         const mode = document.getElementById('cfg-mode').value;
+        const sensorSource = document.getElementById('cfg-sensor').value;
         const smoothWin = parseInt(document.getElementById('cfg-smooth').value) || 1;
         const hpFreq = parseFloat(document.getElementById('cfg-hp').value) || 0;
         const lpFreq = parseFloat(document.getElementById('cfg-lp').value) || 12;
@@ -383,34 +387,49 @@
         const pointsToAnalyze = Math.min(n_total, Math.floor(windowSec * actualFS));
         if (pointsToAnalyze < 32) return;
 
-        const ax_slice = rawData.ax.slice(-pointsToAnalyze);
-        const ay_slice = rawData.ay.slice(-pointsToAnalyze);
-        const az_slice = rawData.az.slice(-pointsToAnalyze);
+        // Selección de Canales y Fusión
         const t_slice = rawData.t.slice(-pointsToAnalyze);
+        let channels = [];
+        
+        // Factor de escala para igualar varianzas (1G ~= 100 dps de forma aproximada)
+        const gyroScale = 100.0; 
+
+        if (sensorSource === 'acc') {
+            channels.push(rawData.ax.slice(-pointsToAnalyze), rawData.ay.slice(-pointsToAnalyze), rawData.az.slice(-pointsToAnalyze));
+        } else if (sensorSource === 'gyro') {
+            channels.push(rawData.gx.slice(-pointsToAnalyze), rawData.gy.slice(-pointsToAnalyze), rawData.gz.slice(-pointsToAnalyze));
+        } else if (sensorSource === 'both') {
+            channels.push(
+                rawData.ax.slice(-pointsToAnalyze), rawData.ay.slice(-pointsToAnalyze), rawData.az.slice(-pointsToAnalyze),
+                rawData.gx.slice(-pointsToAnalyze).map(v => v/gyroScale), 
+                rawData.gy.slice(-pointsToAnalyze).map(v => v/gyroScale), 
+                rawData.gz.slice(-pointsToAnalyze).map(v => v/gyroScale)
+            );
+        }
+
+        // Aplicar Filtros a todos los canales
+        channels = channels.map(ch => applyIIRFilter(applyIIRFilter(applyMovingAverage(ch, smoothWin), lpFreq, 'low', dt), hpFreq, 'high', dt));
 
         let signalToAnalyze = [];
+        const n = pointsToAnalyze;
+        const dims = channels.length; // 3 o 6 dimensiones
 
         if (mode === 'pca') {
-            let f_ax = applyIIRFilter(applyIIRFilter(applyMovingAverage(ax_slice, smoothWin), lpFreq, 'low', dt), hpFreq, 'high', dt);
-            let f_ay = applyIIRFilter(applyIIRFilter(applyMovingAverage(ay_slice, smoothWin), lpFreq, 'low', dt), hpFreq, 'high', dt);
-            let f_az = applyIIRFilter(applyIIRFilter(applyMovingAverage(az_slice, smoothWin), lpFreq, 'low', dt), hpFreq, 'high', dt);
-
-            const n = pointsToAnalyze;
-            const matrix = [];
-            const means = [0, 0, 0];
-            for(let i=0; i<n; i++) {
-                means[0] += f_ax[i]/n; means[1] += f_ay[i]/n; means[2] += f_az[i]/n;
-                matrix.push([f_ax[i], f_ay[i], f_az[i]]);
+            // PCA Generalizada (3D o 6D)
+            const centered = [];
+            for (let i = 0; i < n; i++) {
+                let row = [];
+                for (let d = 0; d < dims; d++) row.push(channels[d][i]);
+                centered.push(row);
             }
-            const centered = matrix.map(r => r.map((v, j) => v - means[j]));
 
-            let ev = [1, 1, 1];
+            let ev = new Array(dims).fill(1);
             for(let i=0; i<8; i++) {
-                let next_ev = [0, 0, 0];
-                for(let r=0; r<3; r++) {
-                    for(let c=0; c<3; c++) {
+                let next_ev = new Array(dims).fill(0);
+                for(let r=0; r<dims; r++) {
+                    for(let c=0; c<dims; c++) {
                         let cov_rc = 0;
-                        centered.forEach(row => cov_rc += (row[r] * row[c]) / (n-1));
+                        for(let row=0; row<n; row++) cov_rc += (centered[row][r] * centered[row][c]) / (n-1);
                         next_ev[r] += cov_rc * ev[c];
                     }
                 }
@@ -420,23 +439,20 @@
             signalToAnalyze = centered.map(r => r.reduce((s, v, j) => s + v * ev[j], 0));
             
             document.getElementById('m-axis-label').innerText = "Vector PCA";
-            document.getElementById('m-axis').innerText = `[${ev[0].toFixed(2)}, ${ev[1].toFixed(2)}, ${ev[2].toFixed(2)}]`;
-            charts.pca.setTitle({text: 'Componente Principal (PCA)'});
+            document.getElementById('m-axis').innerText = dims === 3 ? 
+                `[${ev[0].toFixed(2)}, ${ev[1].toFixed(2)}, ${ev[2].toFixed(2)}]` : `Vector 6D Fusionado`;
 
         } else if (mode === 'mag') {
+            // Magnitud Multidimensional (Teorema de Pitágoras en N dimensiones)
             let mag_raw = [];
-            for(let i=0; i<pointsToAnalyze; i++) {
-                mag_raw.push(Math.sqrt(ax_slice[i]*ax_slice[i] + ay_slice[i]*ay_slice[i] + az_slice[i]*az_slice[i]));
+            for(let i=0; i<n; i++) {
+                let sumSq = 0;
+                for(let d=0; d<dims; d++) sumSq += (channels[d][i] * channels[d][i]);
+                mag_raw.push(Math.sqrt(sumSq));
             }
-            let f_mag = applyMovingAverage(mag_raw, smoothWin);
-            f_mag = applyIIRFilter(f_mag, lpFreq, 'low', dt);
-            f_mag = applyIIRFilter(f_mag, hpFreq, 'high', dt); 
-            
-            signalToAnalyze = f_mag;
-
+            signalToAnalyze = mag_raw;
             document.getElementById('m-axis-label').innerText = "Métrica";
-            document.getElementById('m-axis').innerText = `Magnitud 3D`;
-            charts.pca.setTitle({text: 'Magnitud (Filtrada - Sin 1G)'});
+            document.getElementById('m-axis').innerText = dims === 3 ? `Magnitud 3D` : `Magnitud 6D`;
         }
 
         charts.pca.series[0].setData(signalToAnalyze.map((v, i) => [t_slice[i], v]), true, false, false);
@@ -444,10 +460,7 @@
         // 5. Cálculo FFT
         const fftLen = Math.pow(2, Math.floor(Math.log2(signalToAnalyze.length)));
         const signal = signalToAnalyze.slice(-fftLen);
-        
-        for (let i = 0; i < fftLen; i++) {
-            signal[i] = signal[i] * (0.5 * (1 - Math.cos((2 * Math.PI * i) / (fftLen - 1))));
-        }
+        for (let i = 0; i < fftLen; i++) signal[i] = signal[i] * (0.5 * (1 - Math.cos((2 * Math.PI * i) / (fftLen - 1))));
 
         const spectrum = [];
         let maxP = 0, domF = 0;
@@ -483,13 +496,20 @@
     // --- Conectividad ---
     async function connectUSB() {
         try {
-            log("Solicitando puerto serie USB...");
+            log("Solicitando puerto serie USB...", "info");
             const port = await navigator.serial.requestPort();
             await port.open({ baudRate: 115200 });
 
-            try { await port.setSignals({ dataTerminalReady: true, requestToSend: true }); } catch (e) {}
+            // Truco de reinicio duro DTR/RTS para destrabar ESP32-C3
+            try { 
+                await port.setSignals({ dataTerminalReady: false, requestToSend: false });
+                await new Promise(r => setTimeout(r, 100)); // Breve pausa
+                await port.setSignals({ dataTerminalReady: true, requestToSend: true });
+                log("Señales DTR forzadas (Reset de canal ok).", "success");
+            } catch (e) {
+                log("Aviso: Señales DTR ignoradas por el SO.", "warning");
+            }
             
-            log("Puerto abierto. Esperando CSV...", "info");
             dataStarted = false;
             timeOffset = null; 
 
@@ -505,7 +525,7 @@
                 
                 const lines = buf.split(/\r?\n/);
                 buf = lines.pop(); 
-                lines.forEach(processUSBString);
+                for (let i=0; i<lines.length; i++) processUSBString(lines[i]);
             }
         } catch (err) { log("Error USB: " + err.message, "error"); }
     }
@@ -513,70 +533,29 @@
     async function connectBLE() {
         try {
             log("Escaneando dispositivos BLE...");
-            activeBleDevice = await navigator.bluetooth.requestDevice({
+            const device = await navigator.bluetooth.requestDevice({
                 filters: [{ namePrefix: "ESP32" }],
                 optionalServices: ["6e400001-b5a3-f393-e0a9-e50e24dcca9e"]
             });
 
-            activeBleDevice.addEventListener('gattserverdisconnected', () => { 
-                log("Conexión BLE cortada inesperadamente.", "error"); 
-            });
+            device.addEventListener('gattserverdisconnected', () => { log("Conexión BLE cortada.", "error"); });
 
-            let server;
-            let service;
-            let tx;
-            let attempts = 3;
-
-            // Bucle de reintentos para estabilizar la conexión GATT
-            while (attempts > 0) {
-                try {
-                    log(`Conectando al servidor GATT... (Intento ${4 - attempts}/3)`, "info");
-                    server = await activeBleDevice.gatt.connect();
-                    
-                    // Pausa de estabilización más generosa para que el ESP32 no colapse
-                    await new Promise(resolve => setTimeout(resolve, 1000)); 
-                    
-                    if (!server.connected) {
-                        throw new Error("El dispositivo cortó la conexión al instante.");
-                    }
-
-                    service = await server.getPrimaryService("6e400001-b5a3-f393-e0a9-e50e24dcca9e");
-                    tx = await service.getCharacteristic("6e400003-b5a3-f393-e0a9-e50e24dcca9e");
-                    
-                    break; // Éxito, salimos del bucle de reintentos
-                } catch (err) {
-                    attempts--;
-                    if (attempts === 0) throw err;
-                    log(`Intento fallido: ${err.message}. Reintentando en 1.5s...`, "warning");
-                    await new Promise(resolve => setTimeout(resolve, 1500));
-                }
-            }
+            let server = await device.gatt.connect();
+            await new Promise(resolve => setTimeout(resolve, 1000)); 
+            let service = await server.getPrimaryService("6e400001-b5a3-f393-e0a9-e50e24dcca9e");
+            let tx = await service.getCharacteristic("6e400003-b5a3-f393-e0a9-e50e24dcca9e");
             
             await tx.startNotifications();
             dataStarted = false;
             timeOffset = null; 
-            log("BLE suscrito. Decodificando binario...", "success");
+            log("BLE suscrito. Recibiendo datos...", "success");
 
             tx.addEventListener('characteristicvaluechanged', (e) => {
                 const view = e.target.value; 
                 if(view.byteLength === 16) {
-                    const t_esp = view.getUint32(0, true);
-                    const ax = view.getInt16(4, true) / ACCEL_SCALE;
-                    const ay = view.getInt16(6, true) / ACCEL_SCALE;
-                    const az = view.getInt16(8, true) / ACCEL_SCALE;
-                    const gx = view.getInt16(10, true) * GYRO_SCALE;
-                    const gy = view.getInt16(12, true) * GYRO_SCALE;
-                    const gz = view.getInt16(14, true) * GYRO_SCALE;
-                    processPhysData(t_esp, ax, ay, az, gx, gy, gz);
+                    processPhysData(view.getUint32(0, true), view.getInt16(4, true)/ACCEL_SCALE, view.getInt16(6, true)/ACCEL_SCALE, view.getInt16(8, true)/ACCEL_SCALE, view.getInt16(10, true)*GYRO_SCALE, view.getInt16(12, true)*GYRO_SCALE, view.getInt16(14, true)*GYRO_SCALE);
                 } else if (view.byteLength === 12) {
-                    const t_esp = Date.now();
-                    const ax = view.getInt16(0, true) / ACCEL_SCALE;
-                    const ay = view.getInt16(2, true) / ACCEL_SCALE;
-                    const az = view.getInt16(4, true) / ACCEL_SCALE;
-                    const gx = view.getInt16(6, true) * GYRO_SCALE;
-                    const gy = view.getInt16(8, true) * GYRO_SCALE;
-                    const gz = view.getInt16(10, true) * GYRO_SCALE;
-                    processPhysData(t_esp, ax, ay, az, gx, gy, gz);
+                    processPhysData(Date.now(), view.getInt16(0, true)/ACCEL_SCALE, view.getInt16(2, true)/ACCEL_SCALE, view.getInt16(4, true)/ACCEL_SCALE, view.getInt16(6, true)*GYRO_SCALE, view.getInt16(8, true)*GYRO_SCALE, view.getInt16(10, true)*GYRO_SCALE);
                 }
             });
         } catch (err) { log("Error BLE: " + err.message, "error"); }
