@@ -523,17 +523,26 @@
             console.log("[DEBUG USB] Puerto seleccionado por el usuario. Abriendo a 115200...");
             await port.open({ baudRate: 115200 });
 
-            // SECUENCIA CLÁSICA DE RESET PARA ESP32 (Evita que entre en Download Mode)
+            // SECUENCIA CORREGIDA PARA ESP32-C3 NATIVE USB
             try { 
-                // 1. Bajamos DTR y subimos RTS (Pulso a GND en el pin EN/Reset)
+                // 1. Reiniciar la placa (RTS=true, DTR=false)
                 await port.setSignals({ dataTerminalReady: false, requestToSend: true });
-                await new Promise(r => setTimeout(r, 100)); // Esperamos a que la placa se reinicie
+                await new Promise(r => setTimeout(r, 100)); 
                 
-                // 2. Subimos DTR y bajamos RTS (Liberamos el Reset y decimos que el Terminal está listo)
+                // 2. Soltar el reinicio y dejar que el bootloader trabaje (RTS=false, DTR=false)
+                await port.setSignals({ dataTerminalReady: false, requestToSend: false }); 
+                
+                console.log("[DEBUG USB] Placa reiniciada. Esperando a que el bootloader termine...");
+                log("Reiniciando placa (espera 1.2s)...", "warning");
+                
+                // 3. ESPERA VITAL: Dar tiempo al ESP32 a terminar el bootloader y ejecutar setup()
+                await new Promise(r => setTimeout(r, 1200)); 
+
+                // 4. Decirle al ESP32 que estamos listos para recibir datos (DTR=true)
                 await port.setSignals({ dataTerminalReady: true, requestToSend: false }); 
                 
-                console.log("[DEBUG USB] Secuencia DTR/RTS enviada para Boot normal.");
-                log("Placa reiniciada y lista en modo ejecución.", "success");
+                console.log("[DEBUG USB] DTR activado. El canal de datos de la app está abierto.");
+                log("Placa lista en modo ejecución.", "success");
             } catch (e) {
                 console.warn("[DEBUG USB] Fallo al establecer señales DTR/RTS:", e);
                 log("Aviso: Señales DTR ignoradas por el SO.", "warning");
